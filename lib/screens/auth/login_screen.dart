@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../home/home_screen.dart';
 import 'register_screen.dart';
+import '../../config/app_config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,10 +50,10 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color orangeColor = Color(0xFFFF6B00);
 
   // ============================================================
-  // API LARAVEL
-  // ============================================================
+// API LARAVEL
+// ============================================================
 
-  static const String _baseUrl = 'http://127.0.0.1:8000/api';
+  static String get _baseUrl => AppConfig.baseUrl;
 
   @override
   void dispose() {

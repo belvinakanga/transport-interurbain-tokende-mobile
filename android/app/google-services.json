@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "653087699319",
+    "project_id": "tokende-e535e",
+    "storage_bucket": "tokende-e535e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:653087699319:android:3ce0c3520cde3b850cf172",
+        "android_client_info": {
+          "package_name": "com.example.transport_interurbain_tokende"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7OyEHOhOfbb7vm0sbzUHoqy8spKYPXEk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

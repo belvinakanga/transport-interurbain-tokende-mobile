@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../avis/avis_screen.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MesVoyagesScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -1244,6 +1246,78 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
                 ),
               ),
             ],
+
+            // ====================================================
+            // RÉSERVATION PAYÉE : BILLET + AVIS
+            // ====================================================
+
+            if (statut.toLowerCase() == 'payée' ||
+                statut.toLowerCase() == 'payé') ...[
+              const SizedBox(height: 18),
+
+              // 🎫 VOIR MON BILLET
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showTicket({
+                      'reservation': reservation,
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.confirmation_num_outlined,
+                  ),
+                  label: const Text(
+                    'Voir mon billet',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: orangeColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // ⭐ DONNER MON AVIS
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AvisScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.star_outline,
+                  ),
+                  label: const Text(
+                    'Donner mon avis',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    side: const BorderSide(
+                      color: primaryColor,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1825,6 +1899,8 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
             agency?['nom']?.toString() ??
             agency?['name']?.toString() ??
             'Tokende';
+    final agencyAddress =
+        agency?['adresse']?.toString() ?? '';
 
     final depart = trip?['depart']?.toString() ?? '-';
     final arrivee = trip?['arrivee']?.toString() ?? '-';
@@ -1844,6 +1920,9 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 
     final qrCode =
         ticket['qr_code']?.toString() ?? '-';
+
+    final ticketUrl =
+        'http://192.168.1.84:8000/billet/$qrCode';
 
     showModalBottomSheet<void>(
       context: context,
@@ -1907,12 +1986,28 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            Text(
-                              agencyName,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  agencyName,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+
+                                if (agencyAddress.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '📍 Adresse de l’agence : $agencyAddress',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ],
                         ),
@@ -2002,15 +2097,11 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        SelectableText(
-                          qrCode,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                          ),
+                        QrImageView(
+                          data: ticketUrl,
+                          version: QrVersions.auto,
+                          size: 180,
+                          backgroundColor: Colors.white,
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -2027,14 +2118,56 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 
                   const SizedBox(height: 18),
 
+// ====================================================
+// BOUTON IMPRIMER LE BILLET
+// ====================================================
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.parse(ticketUrl);
+
+                        Navigator.pop(sheetContext);
+
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.print_outlined),
+                      label: const Text(
+                        'Imprimer le billet',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: orangeColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+// ====================================================
+// BOUTON FERMER
+// ====================================================
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(sheetContext),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: orangeColor,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.grey.shade200,
+                        foregroundColor: primaryColor,
                         padding: const EdgeInsets.symmetric(
                           vertical: 15,
                         ),

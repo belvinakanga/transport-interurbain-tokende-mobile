@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../support/support_screen.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({
@@ -188,11 +190,20 @@ class HelpSupportScreen extends StatelessWidget {
               icon: Icons.phone_outlined,
               title: 'Téléphone',
               subtitle: 'Contacter le service client',
-              onTap: () {
-                _showMessage(
-                  context,
-                  'Le contact téléphonique sera disponible prochainement.',
+              onTap: () async {
+                final uri = Uri(
+                  scheme: 'tel',
+                  path: '+242068216025',
                 );
+
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                } else {
+                  _showMessage(
+                    context,
+                    'Impossible d’ouvrir le téléphone.',
+                  );
+                }
               },
             ),
 
@@ -203,11 +214,23 @@ class HelpSupportScreen extends StatelessWidget {
               icon: Icons.email_outlined,
               title: 'E-mail',
               subtitle: 'Envoyer un message à notre équipe',
-              onTap: () {
-                _showMessage(
-                  context,
-                  'Le contact par e-mail sera disponible prochainement.',
+              onTap: () async {
+                final uri = Uri(
+                  scheme: 'mailto',
+                  path: 'appassistancetok@gmail.com',
+                  queryParameters: {
+                    'subject': 'Demande d’assistance TOKENDÉ',
+                  },
                 );
+
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                } else {
+                  _showMessage(
+                    context,
+                    'Impossible d’ouvrir l’application e-mail.',
+                  );
+                }
               },
             ),
 
@@ -217,15 +240,16 @@ class HelpSupportScreen extends StatelessWidget {
               context,
               icon: Icons.chat_outlined,
               title: 'Nous écrire',
-              subtitle: 'Envoyer une demande d’assistance',
+              subtitle: 'Discuter avec notre équipe',
               onTap: () {
-                _showMessage(
+                Navigator.push(
                   context,
-                  'La messagerie d’assistance sera disponible prochainement.',
+                  MaterialPageRoute(
+                    builder: (_) => const SupportScreen(),
+                  ),
                 );
               },
             ),
-
             const SizedBox(height: 30),
 
             // ====================================================
@@ -270,7 +294,206 @@ class HelpSupportScreen extends StatelessWidget {
       ),
     );
   }
+// ============================================================
+// FORMULAIRE DE CONTACT
+// ============================================================
 
+  void _showContactForm(BuildContext context) {
+    final nomController = TextEditingController();
+    final emailController = TextEditingController();
+    final sujetController = TextEditingController();
+    final messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Nous écrire',
+            style: TextStyle(
+              color: primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    labelText: 'Nom',
+                    hintText: 'Votre nom',
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: orangeColor,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: orangeColor,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'E-mail',
+                    hintText: 'Votre adresse e-mail',
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: orangeColor,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: orangeColor,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: sujetController,
+                  decoration: InputDecoration(
+                    labelText: 'Objet',
+                    hintText: 'Objet de votre demande',
+                    prefixIcon: const Icon(
+                      Icons.subject_outlined,
+                      color: orangeColor,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: orangeColor,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                TextField(
+                  controller: messageController,
+                  maxLines: 5,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: 'Message',
+                    hintText: 'Écrivez votre demande...',
+                    alignLabelWithHint: true,
+                    prefixIcon: const Padding(
+                      padding: EdgeInsets.only(bottom: 75),
+                      child: Icon(
+                        Icons.message_outlined,
+                        color: orangeColor,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: orangeColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                'Annuler',
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+
+            ElevatedButton(
+              onPressed: () async {
+                final nom = nomController.text.trim();
+                final email = emailController.text.trim();
+                final sujet = sujetController.text.trim();
+                final message = messageController.text.trim();
+
+                if (nom.isEmpty ||
+                    email.isEmpty ||
+                    sujet.isEmpty ||
+                    message.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Veuillez remplir tous les champs.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                final uri = Uri(
+                  scheme: 'mailto',
+                  path: 'appassistancetok@gmail.com',
+                  queryParameters: {
+                    'subject': sujet,
+                    'body':
+                    'Nom : $nom\n'
+                        'E-mail : $email\n\n'
+                        'Message :\n$message',
+                  },
+                );
+
+                if (await canLaunchUrl(uri)) {
+                  Navigator.pop(dialogContext);
+                  await launchUrl(uri);
+                } else {
+                  _showMessage(
+                    context,
+                    'Impossible d’ouvrir l’application e-mail.',
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: orangeColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Envoyer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   // ============================================================
   // TITRE DE SECTION
   // ============================================================

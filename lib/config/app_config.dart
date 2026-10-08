@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart';
+
 class AppConfig {
-  // Adresse de ton API Laravel
+  // Adresse de l'API Laravel selon la plateforme
 
-  // Si tu utilises un émulateur Android
-  static const String baseUrl = "http://10.0.2.2:8000/api";
+  static String get baseUrl {
+    // Chrome / Web
+    if (kIsWeb) {
+      return "http://127.0.0.1:8000/api";
+    }
 
-// Si tu testes sur un téléphone physique,
-// remplace par l'adresse IP de ton PC :
-// static const String baseUrl = "http://192.168.x.x:8000/api";
+    // Android Emulator
+    return "http://10.0.2.2:8000/api";
+  }
 }
