@@ -73,6 +73,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   String selectedPaymentMethod = 'mobile_money';
 
+  // OpenPay
+  final TextEditingController _phoneController = TextEditingController();
+  String _selectedProvider = 'MTN'; // MTN | AIRTEL
+  bool _useOpenPay = true;
+
   bool _isProcessing = false;
 
   // ============================================================
@@ -90,6 +95,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // ============================================================
   // BUILD
   // ============================================================
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -407,8 +418,58 @@ class _PaymentScreenState extends State<PaymentScreen> {
             // INFORMATIONS PAIEMENT
             // ======================================================
 
-            if (selectedPaymentMethod == 'mobile_money')
-              _buildMobileMoneySection(),
+            if (selectedPaymentMethod == 'mobile_money') ...[
+              const Text(
+                'Détails Mobile Money (OpenPay)',
+                style: TextStyle(
+                  color: Color(0xFF0A2A66),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Numéro de téléphone (format 242XXXXXXXXX)',
+                  hintText: '242066203420',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('MTN Money'),
+                      value: 'MTN',
+                      groupValue: _selectedProvider,
+                      onChanged: (v) {
+                        if (v != null && mounted) setState(() => _selectedProvider = v);
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('Airtel Money'),
+                      value: 'AIRTEL',
+                      groupValue: _selectedProvider,
+                      onChanged: (v) {
+                        if (v != null && mounted) setState(() => _selectedProvider = v);
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
 
             if (selectedPaymentMethod == 'card')
               _buildCardPaymentSection(),
@@ -930,6 +991,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
         return;
       }
+      // ========================================================
+      // VALIDATION TÉLÉPHONE (OpenPay)
+      // ========================================================
+
+      if (selectedPaymentMethod == 'mobile_money') {
+        final phone = _phoneController.text.trim();
+        if (phone.isEmpty) {
+          _showError('Veuillez saisir votre numéro de téléphone.');
+          return;
+        }
+        if (!phone.startsWith('242') || phone.length < 12) {
+          _showError('Numéro invalide. Utiliser le format 242XXXXXXXXX.');
+          return;
+        }
+      }
+
+
 
       // ========================================================
       // DONNÉES
@@ -1204,26 +1282,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // REQUÊTE API
       // ========================================================
 
-      final response =
-      await http.post(
-        Uri.parse(
-          '$apiBaseUrl/achats',
-        ),
-
-        headers: {
-          'Authorization':
-          'Bearer $token',
-
-          'Content-Type':
-          'application/json',
-
-          'Accept':
-          'application/json',
-        },
-
-        body:
-        jsonEncode(data),
-      );
+      late http.Response response;
+      if (selectedPaymentMethod == 'mobile_money') {
+        // Appel OpenPay via backend Laravel
+        final Map<String, dynamic> openpayPayload = {
+          ...data,
+          'payment_phone_number': _phoneController.text.trim(),
+          'provider': _selectedProvider,
+        };
+        response = await http.post(
+          Uri.parse('$apiBaseUrl/openpay/initiate'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(openpayPayload),
+        );
+      } else {
+        response = await http.post(
+          Uri.parse(
+            '$apiBaseUrl/achats',
+          ),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(data),
+        );
+      }
 
       if (!mounted) return;
 
