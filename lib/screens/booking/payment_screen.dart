@@ -7,6 +7,7 @@ import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../../config/app_config.dart';
 import '../home/home_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -78,7 +79,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // OpenPay
   final TextEditingController _phoneController = TextEditingController();
   String _selectedProvider = 'MTN'; // MTN | AIRTEL
-  bool _useOpenPay = true;
+  // Suit la configuration : à faux, le mobile money part vers /achats
+  // comme les autres modes, et le backend valide sans paiement réel.
+  final bool _useOpenPay = AppConfig.paiementEnLigneActif;
 
   bool _isProcessing = false;
 
@@ -402,9 +405,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
           const SizedBox(height: AppSpacing.xs),
 
+          // Sans paiement en ligne, annoncer une demande de confirmation
+          // serait mensonger : aucune ne partira.
           Text(
-            'Format attendu : 242XXXXXXXXX. Vous recevrez une demande de '
-            'confirmation sur ce numéro.',
+            _useOpenPay
+                ? 'Format attendu : 242XXXXXXXXX. Vous recevrez une demande '
+                    'de confirmation sur ce numéro.'
+                : 'Mode test : l’achat est validé sans paiement réel. '
+                    'Aucune demande de confirmation ne sera envoyée.',
             style: AppText.petit(context).copyWith(fontSize: 12),
           ),
         ],
@@ -673,7 +681,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // VALIDATION TÉLÉPHONE (OpenPay)
       // ========================================================
 
-      if (selectedPaymentMethod == 'mobile_money') {
+      // Sans paiement en ligne, le numéro ne sert à rien : l'exiger
+      // bloquerait les tests sans rien valider côté serveur.
+      if (selectedPaymentMethod == 'mobile_money' && _useOpenPay) {
         final phone = _phoneController.text.trim();
         if (phone.isEmpty) {
           _showError('Veuillez saisir votre numéro de téléphone.');
@@ -961,7 +971,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // ========================================================
 
       late http.Response response;
-      if (selectedPaymentMethod == 'mobile_money') {
+      if (selectedPaymentMethod == 'mobile_money' && _useOpenPay) {
         // Appel OpenPay via backend Laravel
         final Map<String, dynamic> openpayPayload = {
           ...data,

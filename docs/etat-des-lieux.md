@@ -4,7 +4,7 @@ Ce que le code porte encore et qu'il faudrait traiter. Rien ici n'est
 bloquant au quotidien ; tout est vérifiable avec `flutter analyze lib`.
 
 ```
-23 issues found    0 erreur
+21 issues found    0 erreur
 ```
 
 ---
@@ -77,7 +77,6 @@ Des intentions jamais réalisées. À supprimer.
 | `assets/images/logo_tokende_old.png` | remplacé par `transparent-logo.png` |
 | `_statusBadge`, `_ticketInfoRow`, `_tripDate`, `_tripTime`, `_reloadAll` | `mes_voyages_screen.dart` |
 | `_showContactForm` | `help_support_screen.dart` |
-| `_useOpenPay` | `payment_screen.dart` |
 
 ### Couleurs déclarées et inutilisées
 
@@ -112,7 +111,7 @@ la **récupération** de mot de passe, elle, fonctionne de bout en bout — voir
 
 | Type | Occurrences |
 |---|---|
-| champs ou déclarations non utilisés | 15 |
+| champs ou déclarations non utilisés | 13 |
 | `BuildContext` à travers un `await` | 2 (`help_support_screen.dart`) |
 | `withOpacity` déprécié | 2 (`quick_service_card.dart`, `custom_card.dart`) |
 | imports inutilisés | 2 |

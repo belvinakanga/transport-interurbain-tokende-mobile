@@ -1,6 +1,16 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
+  /// Le paiement en ligne est-il branché ?
+  ///
+  /// À `false`, un achat réglé en mobile money part vers `/achats` comme
+  /// les autres : le backend le valide directement, sans paiement réel.
+  /// C'est le mode attendu pendant les tests fonctionnels.
+  ///
+  /// Doit rester accordé à `OPENPAY_ACTIF` dans le `.env` du backend :
+  /// les routes OpenPay n'y sont déclarées que si ce drapeau est vrai.
+  static const bool paiementEnLigneActif = false;
+
   /// Adresse de l'API Laravel selon la plateforme.
   static String get baseUrl {
     // Chrome / Web

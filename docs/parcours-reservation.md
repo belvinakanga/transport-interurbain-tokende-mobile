@@ -71,6 +71,28 @@ retenu.
 `booking/payment_screen.dart` — 1599 lignes, le plus gros écran du
 parcours.
 
+### En ce moment : paiement débranché
+
+`AppConfig.paiementEnLigneActif = false`. **Tous les modes de règlement,
+mobile money compris, partent vers `POST /achats`**, que le backend valide
+directement avec `statut => 'payé'` — sans paiement réel. C'est le mode
+voulu pour les tests fonctionnels.
+
+Dans cet état :
+
+- le numéro de téléphone n'est plus exigé ;
+- l'écran annonce « Mode test : l'achat est validé sans paiement réel » au
+  lieu de promettre une demande de confirmation qui n'arrivera pas.
+
+Côté backend, `OPENPAY_ACTIF=false` retire les routes OpenPay et son
+webhook : elles répondent `404`.
+
+**Les deux drapeaux doivent rester accordés.** Si le mobile croit OpenPay
+actif alors que le backend ne déclare plus les routes, l'achat en mobile
+money échoue sur un `404`.
+
+### Quand le paiement en ligne est rebranché
+
 ```
 Flutter                     Laravel                  OpenPay
    ├─ POST /api/openpay/initiate ──────────────────────▶│
