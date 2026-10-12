@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../avis/avis_screen.dart';
+import '../../config/app_config.dart';
+import '../../utils/format_trajet.dart';
+import '../../widgets/tk/tk.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -62,6 +65,21 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 
     _loadReservations();
     _loadAchats();
+  }
+
+  @override
+  void didUpdateWidget(covariant MesVoyagesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // L'écran reste monté dans la PageView de l'accueil : un raccourci qui
+    // demande un autre onglet doit déplacer le TabController existant.
+    if (widget.initialTabIndex != oldWidget.initialTabIndex) {
+      final cible = widget.initialTabIndex.clamp(0, 1);
+
+      if (_tabController.index != cible) {
+        _tabController.animateTo(cible);
+      }
+    }
   }
 
   Future<void> _reloadAll() async {
@@ -661,1118 +679,630 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
     _onSearchChanged('');
   }
 
-// ============================================================
-// BUILD
-// ============================================================
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      backgroundColor,
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
-        foregroundColor:
-        Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Mes voyages',
-          style: TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
-        bottom: TabBar(
-          controller:
-          _tabController,
-          indicatorColor:
-          orangeColor,
-          indicatorWeight: 3,
-          labelColor:
-          Colors.white,
-          unselectedLabelColor:
-          Colors.white70,
-          tabs: const [
-            Tab(
-              icon: Icon(
-                Icons.bookmark_outline,
+      backgroundColor: AppColors.fond(context),
+
+      body: SafeArea(
+        child: Column(
+          children: [
+            _enTete(),
+            _barreRecherche(),
+
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _ongletReservations(),
+                  _ongletAchats(),
+                ],
               ),
-              text: 'Réservations',
-            ),
-            Tab(
-              icon: Icon(
-                Icons.confirmation_num_outlined,
-              ),
-              text: 'Achats',
             ),
           ],
         ),
       ),
-      body: Column(
+    );
+  }
+
+  // ============================================================
+  // EN-TÊTE ET ONGLETS
+  // ============================================================
+
+  Widget _enTete() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.md,
+        AppSpacing.margeEcran,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSearchBar(),
-          Expanded(
-            child: TabBarView(
+          Text('Mes voyages', style: AppText.titre(context)),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Onglets posés sur un rail gris plutôt que sous une barre bleue :
+          // l'écran garde un seul fond et le contenu commence plus haut.
+          Container(
+            height: 44,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.inactifTheme(context),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: TabBar(
               controller: _tabController,
-              children: [
-                _buildReservationsTab(),
-                _buildAchatsTab(),
+              dividerColor: Colors.transparent,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.fondSombre
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              labelColor: AppColors.orange,
+              unselectedLabelColor: AppColors.secondaire(context),
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              tabs: const [
+                Tab(text: 'Réservations'),
+                Tab(text: 'Achats'),
               ],
             ),
           ),
         ],
       ),
-
     );
   }
 
-// ============================================================
-// BARRE DE RECHERCHE
-// ============================================================
+  // ============================================================
+  // BARRE DE RECHERCHE
+  // ============================================================
 
-  Widget _buildSearchBar() {
-    return Container(
-      color: backgroundColor,
+  Widget _barreRecherche() {
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
-        16,
-        14,
-        16,
-        8,
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
       ),
       child: TextField(
         controller: _searchController,
         onChanged: _onSearchChanged,
         textInputAction: TextInputAction.search,
+        style: AppText.corpsFort(context).copyWith(fontSize: 15),
         decoration: InputDecoration(
-          hintText: 'Rechercher un voyage, une agence, une destination...',
-          prefixIcon: const Icon(
-            Icons.search,
-            color: primaryColor,
+          hintText: 'Ville, agence, destination…',
+          hintStyle: AppText.corps(context).copyWith(fontSize: 15),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: AppColors.secondaire(context),
           ),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-            onPressed: _clearSearch,
-            icon: const Icon(Icons.clear),
-            tooltip: 'Effacer',
-          )
-              : null,
+          suffixIcon: _searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  onPressed: _clearSearch,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  color: AppColors.secondaire(context),
+                  tooltip: 'Effacer',
+                ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.fondSombre
+              : Colors.white,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderSide: BorderSide(color: AppColors.inactifTheme(context)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(
-              color: orangeColor,
+              color: AppColors.orange,
               width: 1.5,
             ),
           ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderSide: BorderSide(color: AppColors.inactifTheme(context)),
+          ),
         ),
       ),
     );
   }
 
-// ============================================================
-// ONGLET RÉSERVATIONS
-// ============================================================
+  // ============================================================
+  // ONGLET RÉSERVATIONS
+  // ============================================================
 
-  Widget _buildReservationsTab() {
-    if (_loadingReservations) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: orangeColor,
-        ),
-      );
-    }
+  Widget _ongletReservations() {
+    if (_loadingReservations) return _chargement();
 
     if (_reservationError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            _reservationError!,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
+      return _erreur(_reservationError!, _loadReservations);
     }
 
     if (_filteredReservations.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.search_off,
-              size: 50,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _searchQuery.isEmpty
-                  ? 'Aucune réservation'
-                  : 'Aucune réservation trouvée',
-              style: const TextStyle(
-                color: primaryColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+      return _vide(
+        icone: _searchQuery.isEmpty
+            ? Icons.event_note_outlined
+            : Icons.search_off_rounded,
+        titre: _searchQuery.isEmpty
+            ? 'Aucune réservation'
+            : 'Aucun résultat',
+        message: _searchQuery.isEmpty
+            ? 'Vos réservations apparaîtront ici une fois un trajet réservé.'
+            : 'Aucune réservation ne correspond à « $_searchQuery ».',
+        libelleAction: _searchQuery.isEmpty ? null : 'Effacer la recherche',
+        onAction: _searchQuery.isEmpty ? null : _clearSearch,
       );
     }
 
     return RefreshIndicator(
-      color: orangeColor,
+      color: AppColors.orange,
       onRefresh: _loadReservations,
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.margeEcran,
+          AppSpacing.sm,
+          AppSpacing.margeEcran,
+          // Place réservée à la barre flottante.
+          108,
+        ),
         itemCount: _filteredReservations.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          return _buildReservationCard(
-            _filteredReservations[index],
-          );
-        },
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+        itemBuilder: (context, index) =>
+            _carteReservation(_filteredReservations[index]),
       ),
     );
   }
 
+  // ============================================================
+  // ONGLET ACHATS
+  // ============================================================
 
-// ============================================================
-// CARTE RÉSERVATION
-// ============================================================
+  Widget _ongletAchats() {
+    if (_loadingAchats) return _chargement();
 
-  Widget _buildReservationCard(
-      Map<String, dynamic> reservation,
-      ) {
-    final trip =
-    _trip(reservation);
-
-    final agency =
-    _agency(reservation);
-
-    final agencyName =
-        agency?['nom_agence']
-            ?.toString() ??
-            agency?['nom']
-                ?.toString() ??
-            agency?['name']
-                ?.toString() ??
-            '-';
-
-    final depart =
-        trip?['depart']
-            ?.toString() ??
-            '-';
-
-    final arrivee =
-        trip?['arrivee']
-            ?.toString() ??
-            '-';
-
-    final date =
-    _tripDate(
-      reservation,
-    );
-
-    final heure =
-    _tripTime(
-      reservation,
-    );
-
-    final sieges =
-    _reservationSeats(
-      reservation,
-    );
-
-    final montant =
-    _reservationAmount(
-      reservation,
-    );
-
-    final statut =
-        reservation['statut']
-            ?.toString() ??
-            'En attente';
-
-    final voyageurs =
-    _passengerNames(
-      reservation,
-    );
-
-    return Card(
-      margin:
-      const EdgeInsets.only(
-        bottom: 16,
-      ),
-      elevation: 3,
-      shape:
-      RoundedRectangleBorder(
-        borderRadius:
-        BorderRadius.circular(
-          18,
-        ),
-      ),
-      child: Padding(
-        padding:
-        const EdgeInsets.all(
-          18,
-        ),
-        child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.directions_bus,
-                  color:
-                  orangeColor,
-                  size: 28,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                  child: Text(
-                    agencyName,
-                    style:
-                    const TextStyle(
-                      color:
-                      primaryColor,
-                      fontWeight:
-                      FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-                _statusBadge(
-                  statut,
-                ),
-              ],
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  color:
-                  primaryColor,
-                ),
-                const SizedBox(
-                  width: 8,
-                ),
-                Expanded(
-                  child: Text(
-                    '$depart → $arrivee',
-                    style:
-                    const TextStyle(
-                      fontWeight:
-                      FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(
-              height: 8,
-            ),
-
-            Row(
-              children: [
-                const Icon(
-                  Icons
-                      .calendar_today_outlined,
-                  size: 18,
-                  color:
-                  Colors.grey,
-                ),
-                const SizedBox(
-                  width: 8,
-                ),
-                Text(
-                  '$date • $heure',
-                ),
-              ],
-            ),
-
-// ====================================================
-// VOYAGEURS
-// ====================================================
-
-            if (voyageurs.isNotEmpty) ...[
-              const Divider(
-                height: 30,
-              ),
-
-              Row(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.people_outline,
-                    color:
-                    primaryColor,
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Voyageur(s)',
-                          style:
-                          TextStyle(
-                            color:
-                            Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        ...voyageurs.map(
-                              (nom) => Padding(
-                            padding:
-                            const EdgeInsets.only(
-                              bottom: 3,
-                            ),
-                            child: Text(
-                              '• $nom',
-                              style:
-                              const TextStyle(
-                                color:
-                                primaryColor,
-                                fontWeight:
-                                FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-
-            const Divider(
-              height: 30,
-            ),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Siège',
-                        style:
-                        TextStyle(
-                          color:
-                          Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        sieges.isEmpty
-                            ? '-'
-                            : sieges.join(
-                          ', ',
-                        ),
-                        style:
-                        const TextStyle(
-                          color:
-                          primaryColor,
-                          fontWeight:
-                          FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Montant',
-                        style:
-                        TextStyle(
-                          color:
-                          Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        montant,
-                        style:
-                        const TextStyle(
-                          color:
-                          orangeColor,
-                          fontWeight:
-                          FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            if (statut
-                .toLowerCase()
-                .contains('attente')) ...[
-              const SizedBox(
-                height: 16,
-              ),
-
-              SizedBox(
-                width:
-                double.infinity,
-                child:
-                ElevatedButton(
-                  onPressed:
-                  _payingReservation
-                      ? null
-                      : () =>
-                      _payReservation(
-                        reservation,
-                      ),
-                  style:
-                  ElevatedButton.styleFrom(
-                    backgroundColor:
-                    orangeColor,
-                    foregroundColor:
-                    Colors.white,
-                  ),
-                  child:
-                  const Text(
-                    'Payer',
-                  ),
-                ),
-              ),
-
-              TextButton(
-                onPressed:
-                    () =>
-                    _cancelReservation(
-                      reservation,
-                    ),
-                child:
-                const Text(
-                  'Annuler la réservation',
-                  style:
-                  TextStyle(
-                    color:
-                    Colors.red,
-                  ),
-                ),
-              ),
-            ],
-
-            if (statut
-                .toLowerCase()
-                .contains('annul')) ...[
-              const SizedBox(
-                height: 12,
-              ),
-
-              SizedBox(
-                width:
-                double.infinity,
-                child:
-                OutlinedButton.icon(
-                  onPressed:
-                      () =>
-                      _deleteReservation(
-                        reservation,
-                      ),
-                  icon:
-                  const Icon(
-                    Icons.delete,
-                    color:
-                    Colors.red,
-                  ),
-                  label:
-                  const Text(
-                    'Supprimer la réservation',
-                    style:
-                    TextStyle(
-                      color:
-                      Colors.red,
-                    ),
-                  ),
-                  style:
-                  OutlinedButton.styleFrom(
-                    side:
-                    const BorderSide(
-                      color:
-                      Colors.red,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
-            // ====================================================
-            // RÉSERVATION PAYÉE : BILLET + AVIS
-            // ====================================================
-
-            if (statut.toLowerCase() == 'payée' ||
-                statut.toLowerCase() == 'payé') ...[
-              const SizedBox(height: 18),
-
-              // 🎫 VOIR MON BILLET
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _showTicket({
-                      'reservation': reservation,
-                    });
-                  },
-                  icon: const Icon(
-                    Icons.confirmation_num_outlined,
-                  ),
-                  label: const Text(
-                    'Voir mon billet',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: orangeColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // ⭐ DONNER MON AVIS
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const AvisScreen(),
-                      ),
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.star_outline,
-                  ),
-                  label: const Text(
-                    'Donner mon avis',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    side: const BorderSide(
-                      color: primaryColor,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-// ============================================================
-// ONGLET ACHATS
-// ============================================================
-
-  Widget _buildAchatsTab() {
-    if (_loadingAchats) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: orangeColor,
-        ),
-      );
-    }
-
-    if (_achatError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            _achatError!,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
-    }
+    if (_achatError != null) return _erreur(_achatError!, _loadAchats);
 
     if (_filteredAchats.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.search_off,
-              size: 50,
-              color: Colors.grey,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _searchQuery.isEmpty
-                  ? 'Aucun achat'
-                  : 'Aucun achat trouvé',
-              style: const TextStyle(
-                color: primaryColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            if (_searchQuery.isEmpty) ...[
-              const SizedBox(height: 14),
-              OutlinedButton.icon(
-                onPressed: _loadAchats,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Actualiser'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: primaryColor,
-                  side: const BorderSide(
-                    color: primaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
+      return _vide(
+        icone: _searchQuery.isEmpty
+            ? Icons.confirmation_number_outlined
+            : Icons.search_off_rounded,
+        titre: _searchQuery.isEmpty ? 'Aucun achat' : 'Aucun résultat',
+        message: _searchQuery.isEmpty
+            ? 'Vos billets achetés apparaîtront ici.'
+            : 'Aucun achat ne correspond à « $_searchQuery ».',
+        libelleAction: _searchQuery.isEmpty ? null : 'Effacer la recherche',
+        onAction: _searchQuery.isEmpty ? null : _clearSearch,
       );
     }
 
     return RefreshIndicator(
-      color: orangeColor,
+      color: AppColors.orange,
       onRefresh: _loadAchats,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.margeEcran,
+          AppSpacing.sm,
+          AppSpacing.margeEcran,
+          // Place réservée à la barre flottante.
+          108,
+        ),
         itemCount: _filteredAchats.length,
-        itemBuilder: (context, index) {
-          return _buildAchatCard(
-            _filteredAchats[index],
-          );
-        },
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+        itemBuilder: (context, index) => _carteAchat(_filteredAchats[index]),
       ),
     );
   }
 
+  // ============================================================
+  // ÉTATS TRANSVERSES
+  // ============================================================
 
-// ============================================================
-// CARTE ACHAT
-// ============================================================
+  Widget _chargement() {
+    return const Center(
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          color: AppColors.orange,
+        ),
+      ),
+    );
+  }
 
-  Widget _buildAchatCard(
-      Map<String, dynamic> achat,
-      ) {
-    final reservation =
-    achat['reservation'];
+  Widget _erreur(String message, Future<void> Function() onReessayer) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        TkEmptyState(
+          icone: Icons.wifi_off_rounded,
+          titre: 'Chargement impossible',
+          message: message,
+          libelleAction: 'Réessayer',
+          onAction: onReessayer,
+        ),
+      ],
+    );
+  }
+
+  Widget _vide({
+    required IconData icone,
+    required String titre,
+    required String message,
+    String? libelleAction,
+    VoidCallback? onAction,
+  }) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        TkEmptyState(
+          icone: icone,
+          titre: titre,
+          message: message,
+          libelleAction: libelleAction,
+          onAction: onAction,
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // CARTE RÉSERVATION
+  // ============================================================
+
+  Widget _carteReservation(Map<String, dynamic> reservation) {
+    final trip = _trip(reservation);
+    final agency = _agency(reservation);
+
+    final agencyName = agency?['nom_agence']?.toString() ??
+        agency?['nom']?.toString() ??
+        agency?['name']?.toString() ??
+        '-';
+
+    final depart = trip?['depart']?.toString() ?? '-';
+    final arrivee = trip?['arrivee']?.toString() ?? '-';
+
+    final sieges = _reservationSeats(reservation);
+    final montant = _reservationAmount(reservation);
+    final voyageurs = _passengerNames(reservation);
+
+    final statut = reservation['statut']?.toString() ?? 'En attente';
+    final s = statut.toLowerCase();
+
+    final estAnnulee = s.contains('annul');
+
+    // Une réservation confirmée par l'agence donne droit au billet au même
+    // titre qu'une réservation payée : les deux ouvrent le billet et l'avis.
+    final estHonoree =
+        s == 'payée' || s == 'payé' || s.startsWith('confirm');
+
+    // « En attente » ne vaut que si la réservation n'est ni honorée ni
+    // annulée, sinon un statut comme « paiement en attente de validation »
+    // afficherait les deux jeux de boutons.
+    final estEnAttente =
+        !estHonoree && !estAnnulee && s.contains('attente');
+
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          _trajetEtStatut(
+            depart: depart,
+            arrivee: arrivee,
+            statut: statut,
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          _detailsVoyage(
+            agence: agencyName,
+            trajet: trip,
+            sieges: sieges,
+            montant: montant,
+            voyageurs: voyageurs,
+          ),
+
+          if (estEnAttente) ...[
+            const SizedBox(height: AppSpacing.md),
+            TkButton(
+              libelle: 'Payer maintenant',
+              onPressed: _payingReservation
+                  ? null
+                  : () => _payReservation(reservation),
+              enChargement: _payingReservation,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            TkButton(
+              libelle: 'Annuler la réservation',
+              onPressed: () => _cancelReservation(reservation),
+              variante: TkButtonVariante.tonal,
+            ),
+          ],
+
+          if (estAnnulee) ...[
+            const SizedBox(height: AppSpacing.md),
+            TkButton(
+              libelle: 'Supprimer la réservation',
+              onPressed: () => _deleteReservation(reservation),
+              variante: TkButtonVariante.tonal,
+            ),
+          ],
+
+          if (estHonoree) ...[
+            const SizedBox(height: AppSpacing.md),
+            TkButton(
+              libelle: 'Voir mon billet',
+              onPressed: () => _showTicket({'reservation': reservation}),
+              icone: Icons.confirmation_number_outlined,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            TkButton(
+              libelle: 'Donner mon avis',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AvisScreen()),
+                );
+              },
+              variante: TkButtonVariante.tonal,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // CARTE ACHAT
+  // ============================================================
+
+  Widget _carteAchat(Map<String, dynamic> achat) {
+    final reservation = achat['reservation'];
 
     Map<String, dynamic>? trip;
-
-    if (reservation is Map &&
-        reservation['trajet'] is Map) {
-      trip =
-      Map<String, dynamic>.from(
-        reservation['trajet'],
-      );
+    if (reservation is Map && reservation['trajet'] is Map) {
+      trip = Map<String, dynamic>.from(reservation['trajet']);
     } else {
-      trip = _trip(
-        achat,
-      );
+      trip = _trip(achat);
     }
 
     Map<String, dynamic>? agency;
-
-    if (trip != null &&
-        trip['agence'] is Map) {
-      agency =
-      Map<String, dynamic>.from(
-        trip['agence'],
-      );
+    if (trip != null && trip['agence'] is Map) {
+      agency = Map<String, dynamic>.from(trip['agence']);
     } else {
-      agency = _agency(
-        achat,
-      );
+      agency = _agency(achat);
     }
 
-    final agencyName =
-        agency?['nom_agence']
-            ?.toString() ??
-            agency?['nom']
-                ?.toString() ??
-            agency?['name']
-                ?.toString() ??
-            '-';
+    final agencyName = agency?['nom_agence']?.toString() ??
+        agency?['nom']?.toString() ??
+        agency?['name']?.toString() ??
+        '-';
 
-    final depart =
-        trip?['depart']
-            ?.toString() ??
-            '-';
+    final depart = trip?['depart']?.toString() ?? '-';
+    final arrivee = trip?['arrivee']?.toString() ?? '-';
+    final prix = _amountFromAchat(achat);
 
-    final arrivee =
-        trip?['arrivee']
-            ?.toString() ??
-            '-';
+    final sieges = reservation is Map
+        ? _reservationSeats(Map<String, dynamic>.from(reservation))
+        : _achatSeats(achat);
 
-    final date =
-        trip?['date_depart']
-            ?.toString() ??
-            '-';
+    final voyageurs = reservation is Map
+        ? _passengerNames(Map<String, dynamic>.from(reservation))
+        : _passengerNames(achat);
 
-    final heure =
-        trip?['heure_depart']
-            ?.toString() ??
-            '-';
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-    final prix =
-    _amountFromAchat(
-      achat,
-    );
+          _trajetEtStatut(
+            depart: depart,
+            arrivee: arrivee,
+            statut: null,
+          ),
 
-    final sieges =
-    reservation is Map
-        ? _reservationSeats(
-      Map<String, dynamic>.from(
-        reservation,
-      ),
-    )
-        : _achatSeats(
-      achat,
-    );
+          const SizedBox(height: AppSpacing.sm),
 
-    final voyageurs =
-    reservation is Map
-        ? _passengerNames(
-      Map<String, dynamic>.from(
-        reservation,
-      ),
-    )
-        : _passengerNames(
-      achat,
-    );
+          _detailsVoyage(
+            agence: agencyName,
+            trajet: trip,
+            sieges: sieges,
+            montant: prix,
+            voyageurs: voyageurs,
+          ),
 
-    return Card(
-      margin:
-      const EdgeInsets.only(
-        bottom: 16,
-      ),
-      elevation: 3,
-      shape:
-      RoundedRectangleBorder(
-        borderRadius:
-        BorderRadius.circular(
-          18,
-        ),
-      ),
-      child: Padding(
-        padding:
-        const EdgeInsets.all(
-          18,
-        ),
-        child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.confirmation_num,
-                  color:
-                  orangeColor,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Expanded(
-                  child: Text(
-                    agencyName,
-                    style:
-                    const TextStyle(
-                      color:
-                      primaryColor,
-                      fontWeight:
-                      FontWeight.bold,
-                      fontSize: 17,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.check_circle,
-                  color:
-                  Colors.green,
-                ),
-              ],
-            ),
+          const SizedBox(height: AppSpacing.md),
 
-            const SizedBox(
-              height: 16,
-            ),
+          TkButton(
+            libelle: 'Voir mon billet',
+            onPressed: () => _showTicket(achat),
+            icone: Icons.confirmation_number_outlined,
+          ),
 
-            Text(
-              '$depart → $arrivee',
-              style:
-              const TextStyle(
-                fontWeight:
-                FontWeight.w600,
-              ),
-            ),
+          const SizedBox(height: AppSpacing.xs),
 
-            const SizedBox(
-              height: 8,
-            ),
-
-            Text(
-              '$date • $heure',
-            ),
-
-            if (voyageurs.isNotEmpty) ...[
-              const Divider(
-                height: 30,
-              ),
-
-              Row(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.people_outline,
-                    color:
-                    primaryColor,
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Voyageur(s)',
-                          style:
-                          TextStyle(
-                            color:
-                            Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 5,
-                        ),
-                        ...voyageurs.map(
-                              (nom) => Text(
-                            '• $nom',
-                            style:
-                            const TextStyle(
-                              color:
-                              primaryColor,
-                              fontWeight:
-                              FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-
-            const Divider(
-              height: 30,
-            ),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Siège',
-                        style:
-                        TextStyle(
-                          color:
-                          Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        sieges.isEmpty
-                            ? '-'
-                            : sieges.join(
-                          ', ',
-                        ),
-                        style:
-                        const TextStyle(
-                          color:
-                          primaryColor,
-                          fontWeight:
-                          FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Montant',
-                        style:
-                        TextStyle(
-                          color:
-                          Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 4,
-                      ),
-                      Text(
-                        prix,
-                        style:
-                        const TextStyle(
-                          color:
-                          orangeColor,
-                          fontWeight:
-                          FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-                  // ====================================================
-// BOUTON BILLET
-// ====================================================
-
-    const SizedBox(height: 18),
-
-    SizedBox(
-    width: double.infinity,
-    child: ElevatedButton.icon(
-    onPressed: () => _showTicket(achat),
-    icon: const Icon(
-    Icons.confirmation_num_outlined,
-    ),
-    label: const Text(
-    'Voir mon billet',
-    ),
-    style: ElevatedButton.styleFrom(
-    backgroundColor: orangeColor,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(
-    vertical: 14,
-    ),
-    shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(14),
-    ),
-    ),
-    ),
-    ),
-
-// ====================================================
-// BOUTON AVIS
-// ====================================================
-
-    const SizedBox(height: 12),
-
-    SizedBox(
-    width: double.infinity,
-    child: OutlinedButton.icon(
-    onPressed: () {
-    Navigator.push(
-    context,
-    MaterialPageRoute(
-    builder: (_) => const AvisScreen(),
-    ),
-    );
-    },
-    icon: const Icon(
-    Icons.star_outline,
-    ),
-    label: const Text(
-    'Donner mon avis',
-    ),
-    style: OutlinedButton.styleFrom(
-    foregroundColor: primaryColor,
-    side: const BorderSide(
-    color: primaryColor,
-    ),
-    padding: const EdgeInsets.symmetric(
-    vertical: 14,
-    ),
-    shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(14),
-    ),
-    ),
-    ),
-    ),
-          ],
-        ),
+          TkButton(
+            libelle: 'Donner mon avis',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AvisScreen()),
+              );
+            },
+            variante: TkButtonVariante.tonal,
+          ),
+        ],
       ),
     );
   }
 
-
   // ============================================================
-  // BADGE STATUT
-// ============================================================
+  // BLOCS PARTAGÉS PAR LES DEUX CARTES
+  // ============================================================
+
+  /// Villes de départ et d'arrivée, puce de statut à droite.
+  Widget _trajetEtStatut({
+    required String depart,
+    required String arrivee,
+    required String? statut,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ville(depart, Icons.trip_origin_rounded),
+              Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: Container(
+                  width: 2,
+                  height: 14,
+                  color: AppColors.inactifTheme(context),
+                ),
+              ),
+              _ville(arrivee, Icons.place_rounded),
+            ],
+          ),
+        ),
+
+        if (statut != null) ...[
+          const SizedBox(width: AppSpacing.xs),
+          TkChip.statut(statut),
+        ],
+      ],
+    );
+  }
+
+  Widget _ville(String nom, IconData icone) {
+    return Row(
+      children: [
+        Icon(icone, size: 15, color: AppColors.orange),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            nom,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.corpsFort(context).copyWith(fontSize: 17),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Agence, date, heure, sièges, montant, voyageurs.
+  ///
+  /// Le montant est mis en avant : c'est l'information que l'utilisateur
+  /// cherche en premier sur une liste de voyages.
+  Widget _detailsVoyage({
+    required String agence,
+    required Map<String, dynamic>? trajet,
+    required List<int> sieges,
+    required String montant,
+    required List<String> voyageurs,
+  }) {
+    // Dates et heures viennent du backend, qui normalise les formats
+    // hétérogènes de la base ; on n'affiche que ce qui existe réellement.
+    final quand = FormatTrajet.dateEtHeure(trajet);
+    final arrivee = FormatTrajet.heureArrivee(trajet);
+    final duree = FormatTrajet.duree(trajet);
+
+    final lignes = <(IconData, String)>[
+      (Icons.business_outlined, agence),
+      if (quand != null) (Icons.event_rounded, quand),
+      if (arrivee != null)
+        (Icons.flag_outlined, 'Arrivée $arrivee'),
+      if (duree != null) (Icons.schedule_rounded, duree),
+      if (sieges.isNotEmpty)
+        (
+          Icons.event_seat_outlined,
+          sieges.length > 1
+              ? 'Sièges ${sieges.join(', ')}'
+              : 'Siège ${sieges.first}',
+        ),
+      if (voyageurs.isNotEmpty)
+        (
+          Icons.person_outline_rounded,
+          voyageurs.length > 2
+              ? '${voyageurs.take(2).join(', ')} +${voyageurs.length - 2}'
+              : voyageurs.join(', '),
+        ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(height: AppSpacing.md, color: AppColors.inactifTheme(context)),
+
+        Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: 6,
+          children: [
+            for (final (icone, texte) in lignes)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icone,
+                    size: 14,
+                    color: AppColors.secondaire(context),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    texte,
+                    style: AppText.petit(context).copyWith(fontSize: 13),
+                  ),
+                ],
+              ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.sm),
+
+        Row(
+          children: [
+            Text('Montant', style: AppText.label(context)),
+            const Spacer(),
+            Text(
+              montant,
+              style: AppText.corpsFort(context).copyWith(
+                fontSize: 18,
+                color: AppColors.orange,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
 
   // ============================================================
@@ -1904,8 +1434,9 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 
     final depart = trip?['depart']?.toString() ?? '-';
     final arrivee = trip?['arrivee']?.toString() ?? '-';
-    final date = trip?['date_depart']?.toString() ?? '-';
-    final heure = trip?['heure_depart']?.toString() ?? '-';
+    // Même source que les cartes : les libellés calculés par le backend.
+    final date = FormatTrajet.date(trip) ?? '-';
+    final heure = FormatTrajet.heureDepart(trip) ?? '-';
 
     final voyageurs = reservation.isNotEmpty
         ? _passengerNames(reservation)
@@ -1921,274 +1452,23 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
     final qrCode =
         ticket['qr_code']?.toString() ?? '-';
 
-    final ticketUrl =
-        'http://192.168.1.84:8000/billet/$qrCode';
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 720),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-            ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                22, 14, 22, 28,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 45,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3EA),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: const Icon(
-                          Icons.confirmation_num_outlined,
-                          color: orangeColor,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Billet de voyage',
-                              style: TextStyle(
-                                color: primaryColor,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  agencyName,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-
-                                if (agencyAddress.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    '📍 Adresse de l’agence : $agencyAddress',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FB),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          '$depart → $arrivee',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: primaryColor,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          '$date • $heure',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  _ticketInfoRow(
-                    Icons.person_outline,
-                    'Voyageur',
-                    voyageurs.isEmpty
-                        ? '-'
-                        : voyageurs.join(', '),
-                  ),
-
-                  _ticketInfoRow(
-                    Icons.event_seat_outlined,
-                    'Siège(s)',
-                    sieges.isEmpty
-                        ? '-'
-                        : sieges.join(', '),
-                  ),
-
-                  _ticketInfoRow(
-                    Icons.confirmation_num_outlined,
-                    'N° billet',
-                    numero,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8F2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFFFFE0C7),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Code billet',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        QrImageView(
-                          data: ticketUrl,
-                          version: QrVersions.auto,
-                          size: 180,
-                          backgroundColor: Colors.white,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Présentez ce code lors du contrôle.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-// ====================================================
-// BOUTON IMPRIMER LE BILLET
-// ====================================================
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final uri = Uri.parse(ticketUrl);
-
-                        Navigator.pop(sheetContext);
-
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.print_outlined),
-                      label: const Text(
-                        'Imprimer le billet',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: orangeColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-// ====================================================
-// BOUTON FERMER
-// ====================================================
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pop(sheetContext),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.shade200,
-                        foregroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text(
-                        'Fermer',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+    // Le billet est rendu par le composant partagé : l'accueil ouvre
+    // exactement le même, depuis la carte « prochain départ ».
+    TkBilletSheet.afficher(
+      context,
+      urlPublique: AppConfig.urlBillet(qrCode),
+      billet: BilletAffichage(
+        numero: numero,
+        qrCode: qrCode,
+        agence: agencyName,
+        adresseAgence: agencyAddress,
+        depart: depart,
+        arrivee: arrivee,
+        date: date,
+        heure: heure,
+        voyageurs: voyageurs,
+        sieges: sieges,
+      ),
     );
   }
 
@@ -2708,26 +1988,11 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 // ============================================================
 
   void _showMessage(
-      String message, {
-        required bool isError,
-      }) {
+    String message, {
+    required bool isError,
+  }) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(
-      context,
-    )
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content:
-          Text(message),
-          behavior:
-          SnackBarBehavior.floating,
-          backgroundColor:
-          isError
-              ? Colors.red
-              : Colors.green,
-        ),
-      );
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 }

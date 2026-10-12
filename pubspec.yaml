@@ -46,6 +46,8 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  printing: ^5.15.1
+  pdf: ^3.13.1
 
 
 dev_dependencies:
@@ -69,6 +71,7 @@ flutter:
 
   assets:
     - assets/images/logo_tokende_old.png
+    - assets/images/transparent-logo.png
     - assets/images/onboarding/
     - assets/images/tokende_bus_login.jpg
 

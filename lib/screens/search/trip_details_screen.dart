@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/tk/tk.dart';
+
 import '../booking/seat_selection_screen.dart';
 
 class TripDetailsScreen extends StatelessWidget {
@@ -78,691 +80,278 @@ class TripDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: AppColors.fond(context),
 
-        // ========================================================
-        // APP BAR
-        // ========================================================
+      body: SafeArea(
+        child: Column(
+          children: [
 
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF0A2A66),
-          foregroundColor: Colors.white,
-          elevation: 0,
+            _enTete(context),
 
-          title: const Text(
-            'Détails du trajet',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.lg,
+                ),
+                children: [
+                  _carteItineraire(context),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  _carteInformations(context),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  _cartePrix(context),
+                ],
+              ),
             ),
-          ),
+
+            _barreAction(context),
+          ],
         ),
-
-        // ========================================================
-        // BODY
-        // ========================================================
-
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-
-            // ====================================================
-            // EN-TÊTE DU TRAJET
-            // ====================================================
-
-            Container(
-            width: double.infinity,
-
-            padding: const EdgeInsets.all(20),
-
-            decoration: const BoxDecoration(
-              color: Color(0xFF0A2A66),
-
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
-              ),
-            ),
-
-            child: Column(
-              children: [
-
-                // ==================================================
-                // AGENCE
-                // ==================================================
-
-                Row(
-                  mainAxisAlignment:
-                  MainAxisAlignment.center,
-
-                  children: [
-                    Container(
-                      width: 55,
-                      height: 55,
-
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3EB),
-
-                        borderRadius:
-                        BorderRadius.circular(16),
-                      ),
-
-                      child: const Icon(
-                        Icons.directions_bus_rounded,
-
-                        color:
-                        Color(0xFFFF6B00),
-
-                        size: 32,
-                      ),
-                    ),
-
-                    const SizedBox(width: 15),
-
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-
-                        children: [
-                          Text(
-                            agency,
-
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 21,
-                              fontWeight:
-                              FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 5),
-
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-
-                                color: Colors.amber,
-
-                                size: 18,
-                              ),
-
-                              const SizedBox(width: 4),
-
-                              Text(
-                                rating,
-
-                                style:
-                                const TextStyle(
-                                  color:
-                                  Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 25),
-
-                // ==================================================
-                // DATE
-                // ==================================================
-
-                Text(
-                  formattedDate,
-
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // ====================================================
-          // ITINÉRAIRE
-          // ====================================================
-
-          _buildSection(
-            child: Column(
-              children: [
-
-                const Align(
-                  alignment:
-                  Alignment.centerLeft,
-
-                  child: Text(
-                    'Itinéraire',
-
-                    style: TextStyle(
-                      color:
-                      Color(0xFF0A2A66),
-
-                      fontSize: 20,
-
-                      fontWeight:
-                      FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                Row(
-                  children: [
-
-                    // ==================================================
-                    // DÉPART
-                    // ==================================================
-
-                    Column(
-                      children: [
-                        Text(
-                          departureTime,
-
-                          style:
-                          const TextStyle(
-                            color:
-                            Color(0xFF0A2A66),
-
-                            fontSize: 25,
-
-                            fontWeight:
-                            FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 5),
-
-                        SizedBox(
-                          width: 90,
-
-                          child: Text(
-                            departure,
-
-                            textAlign:
-                            TextAlign.center,
-
-                            style:
-                            const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // ==================================================
-                    // LIGNE
-                    // ==================================================
-
-                    Expanded(
-                      child: Column(
-                        children: [
-
-                          Text(
-                            duration,
-
-                            style:
-                            const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Row(
-                            children: [
-
-                              const Expanded(
-                                child: Divider(
-                                  color:
-                                  Color(0xFFDDDDDD),
-                                ),
-                              ),
-
-                              Container(
-                                width: 11,
-                                height: 11,
-
-                                decoration:
-                                const BoxDecoration(
-                                  color:
-                                  Color(0xFFFF6B00),
-
-                                  shape:
-                                  BoxShape.circle,
-                                ),
-                              ),
-
-                              const Expanded(
-                                child: Divider(
-                                  color:
-                                  Color(0xFFDDDDDD),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // ==================================================
-                    // ARRIVÉE
-                    // ==================================================
-
-                    Column(
-                      children: [
-                        Text(
-                          arrivalTime,
-
-                          style:
-                          const TextStyle(
-                            color:
-                            Color(0xFF0A2A66),
-
-                            fontSize: 25,
-
-                            fontWeight:
-                            FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 5),
-
-                        SizedBox(
-                          width: 90,
-
-                          child: Text(
-                            destination,
-
-                            textAlign:
-                            TextAlign.center,
-
-                            style:
-                            const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 15),
-              // ====================================================
-              // INFORMATIONS DU VOYAGE
-              // ====================================================
-
-              _buildSection(
-                child: Column(
-                  children: [
-
-                    const Align(
-                      alignment:
-                      Alignment.centerLeft,
-
-                      child: Text(
-                        'Informations du voyage',
-
-                        style: TextStyle(
-                          color:
-                          Color(0xFF0A2A66),
-
-                          fontSize: 20,
-
-                          fontWeight:
-                          FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // DATE
-                    _buildInfoRow(
-                      Icons.calendar_today_outlined,
-
-                      'Date',
-
-                      formattedDate,
-                    ),
-
-                    // VOYAGEURS
-                    _buildInfoRow(
-                      Icons.people_outline,
-
-                      'Voyageurs',
-
-                      travelers == 1
-                          ? '1 voyageur'
-                          : '$travelers voyageurs',
-                    ),
-
-                    // DURÉE
-                    _buildInfoRow(
-                      Icons.access_time,
-
-                      'Durée',
-
-                      duration,
-                    ),
-
-                    // SERVICE
-                    _buildInfoRow(
-                      Icons.verified_outlined,
-
-                      'Service',
-
-                      'Transport interurbain',
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              // ====================================================
-              // PRIX
-              // ====================================================
-
-              _buildSection(
-                child: Row(
-                  children: [
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-
-                        children: const [
-                          Text(
-                            'Prix par voyageur',
-
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-
-                          SizedBox(height: 5),
-
-                          Text(
-                            'Tarif du trajet',
-
-                            style: TextStyle(
-                              color:
-                              Color(0xFF0A2A66),
-
-                              fontSize: 16,
-
-                              fontWeight:
-                              FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Text(
-                      price,
-
-                      style: const TextStyle(
-                        color:
-                        Color(0xFFFF6B00),
-
-                        fontSize: 22,
-
-                        fontWeight:
-                        FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              // ====================================================
-              // BOUTON CHOISIR MON SIÈGE
-              // ====================================================
-
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 20,
-                ),
-
-                child: SizedBox(
-                  width: double.infinity,
-
-                  height: 58,
-
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-
-                      Navigator.push(
-                        context,
-
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              SeatSelectionScreen(
-
-                                // ==========================================
-                                // ID DU TRAJET
-                                // ==========================================
-
-                                trajetId:
-                                trajetId,
-
-                                // ==========================================
-                                // TRAJET
-                                // ==========================================
-
-                                agency:
-                                agency,
-
-                                departure:
-                                departure,
-
-                                destination:
-                                destination,
-
-                                // ==========================================
-                                // DATE
-                                // ==========================================
-
-                                departureDate:
-                                formattedDate,
-
-                                // ==========================================
-                                // HORAIRES
-                                // ==========================================
-
-                                departureTime:
-                                departureTime,
-
-                                arrivalTime:
-                                arrivalTime,
-
-                                // ==========================================
-                                // PRIX
-                                // ==========================================
-
-                                price:
-                                price,
-
-                                // ==========================================
-                                // VOYAGEURS
-                                // ==========================================
-
-                                travelers:
-                                travelers,
-                              ),
-                        ),
-                      );
-                    },
-
-                    icon: const Icon(
-                      Icons.event_seat_outlined,
-                    ),
-
-                    label: const Text(
-                      'Choisir mon siège',
-
-                      style: TextStyle(
-                        fontSize: 17,
-
-                        fontWeight:
-                        FontWeight.bold,
-                      ),
-                    ),
-
-                    style:
-                    ElevatedButton.styleFrom(
-                      backgroundColor:
-                      const Color(0xFFFF6B00),
-
-                      foregroundColor:
-                      Colors.white,
-
-                      elevation: 3,
-
-                      shape:
-                      RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
+      ),
     );
   }
 
   // ============================================================
-  // CONSTRUIRE UNE SECTION
+  // EN-TÊTE
   // ============================================================
 
-  Widget _buildSection({
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-
-      margin:
-      const EdgeInsets.symmetric(
-        horizontal: 20,
-      ),
-
-      padding:
-      const EdgeInsets.all(20),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(20),
-
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.black.withOpacity(0.05),
-
-            blurRadius: 12,
-
-            offset:
-            const Offset(0, 4),
-          ),
-        ],
-      ),
-
-      child: child,
-    );
-  }
-
-  // ============================================================
-  // LIGNE D'INFORMATION
-  // ============================================================
-
-  Widget _buildInfoRow(
-      IconData icon,
-      String title,
-      String value,
-      ) {
+  Widget _enTete(BuildContext context) {
     return Padding(
-      padding:
-      const EdgeInsets.only(
-        bottom: 16,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
       ),
-
       child: Row(
         children: [
-
-          Icon(
-            icon,
-
-            color:
-            const Color(0xFFFF6B00),
-
-            size: 23,
+          TkIconButton(
+            icone: Icons.arrow_back_rounded,
+            infobulle: 'Retour',
+            onPressed: () => Navigator.pop(context),
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.sm),
 
           Expanded(
             child: Text(
-              title,
-
-              style:
-              const TextStyle(
-                color: Colors.grey,
-
-                fontSize: 14,
-              ),
-            ),
-          ),
-
-          Flexible(
-            child: Text(
-              value,
-
-              textAlign:
-              TextAlign.right,
-
-              style:
-              const TextStyle(
-                color:
-                Color(0xFF0A2A66),
-
-                fontWeight:
-                FontWeight.w600,
-
-                fontSize: 14,
-              ),
+              'Détails du trajet',
+              style: AppText.sousTitre(context),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ITINÉRAIRE
+  // ============================================================
+
+  Widget _carteItineraire(BuildContext context) {
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(agency, style: AppText.corpsFort(context).copyWith(fontSize: 15)),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Les horaires portent l'heure à gauche et la ville à droite :
+          // c'est l'ordre dans lequel on lit un départ.
+          _etape(
+            context,
+            heure: departureTime,
+            ville: departure,
+            icone: Icons.trip_origin_rounded,
+          ),
+
+          Padding(
+            padding: const EdgeInsets.only(left: 7),
+            child: Container(
+              width: 2,
+              height: 26,
+              color: AppColors.inactifTheme(context),
+            ),
+          ),
+
+          _etape(
+            context,
+            heure: arrivalTime,
+            ville: destination,
+            icone: Icons.place_rounded,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _etape(
+    BuildContext context, {
+    required String heure,
+    required String ville,
+    required IconData icone,
+  }) {
+    return Row(
+      children: [
+        Icon(icone, size: 15, color: AppColors.orange),
+
+        const SizedBox(width: AppSpacing.sm),
+
+        SizedBox(
+          width: 62,
+          child: Text(
+            heure,
+            style: AppText.corpsFort(context).copyWith(fontSize: 18),
+          ),
+        ),
+
+        Expanded(
+          child: Text(
+            ville,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.corps(context).copyWith(fontSize: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // INFORMATIONS
+  // ============================================================
+
+  Widget _carteInformations(BuildContext context) {
+    final lignes = <(String, String)>[
+      ('Date', formattedDate),
+      (
+        'Voyageurs',
+        travelers == 1 ? '1 voyageur' : '$travelers voyageurs',
+      ),
+      ('Durée', duration),
+      ('Service', 'Transport interurbain'),
+    ];
+
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Informations', style: AppText.label(context)),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          for (var i = 0; i < lignes.length; i++) ...[
+            if (i > 0)
+              Divider(height: 1, color: AppColors.inactifTheme(context)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      lignes[i].$1,
+                      style: AppText.corps(context).copyWith(fontSize: 15),
+                    ),
+                  ),
+                  Text(
+                    lignes[i].$2,
+                    style: AppText.corpsFort(context).copyWith(fontSize: 15),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // PRIX
+  // ============================================================
+
+  Widget _cartePrix(BuildContext context) {
+    return TkCard(
+      accentuee: true,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Prix par voyageur', style: AppText.label(context)),
+                const SizedBox(height: 2),
+                Text(
+                  travelers == 1
+                      ? 'Pour 1 voyageur'
+                      : 'Pour $travelers voyageurs',
+                  style: AppText.petit(context).copyWith(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+
+          Text(
+            price,
+            style: AppText.titre(context).copyWith(
+              fontSize: 24,
+              color: AppColors.orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // ACTION
+  // ============================================================
+
+  /// Barre fixe en bas : le bouton reste atteignable sans faire défiler.
+  Widget _barreAction(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+        AppSpacing.margeEcran,
+        AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.fond(context),
+        border: Border(
+          top: BorderSide(color: AppColors.inactifTheme(context)),
+        ),
+      ),
+      child: TkButton(
+        libelle: 'Choisir mon siège',
+        icone: Icons.event_seat_outlined,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SeatSelectionScreen(
+                trajetId: trajetId,
+                agency: agency,
+                departure: departure,
+                destination: destination,
+                departureDate: formattedDate,
+                departureTime: departureTime,
+                arrivalTime: arrivalTime,
+                price: price,
+                travelers: travelers,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

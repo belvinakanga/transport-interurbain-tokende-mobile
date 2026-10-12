@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -102,586 +104,68 @@ class _PaymentScreenState extends State<PaymentScreen> {
     super.dispose();
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: AppColors.fond(context),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0A2A66),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Paiement',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // ======================================================
-            // TITRE
-            // ======================================================
-
-            Text(
-              widget.isPurchase
-                  ? 'Finalisez votre achat'
-                  : 'Finalisez votre réservation',
-
-              style: const TextStyle(
-                color: Color(0xFF0A2A66),
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              widget.isPurchase
-                  ? 'Finalisez l’achat de votre billet.'
-                  : 'Effectuez le paiement de votre réservation.',
-
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // ======================================================
-            // RÉSUMÉ
-            // ======================================================
-
-            _buildCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  const Text(
-                    'Résumé',
-                    style: TextStyle(
-                      color: Color(0xFF0A2A66),
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Row(
-                    children: [
-
-                      const Icon(
-                        Icons.directions_bus_rounded,
-                        color: Color(0xFFFF6B00),
-                        size: 28,
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Text(
-                          widget.agency,
-                          style: const TextStyle(
-                            color: Color(0xFF0A2A66),
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  _buildInfoRow(
-                    Icons.route_outlined,
-                    'Trajet',
-                    '${widget.departure} → ${widget.destination}',
-                  ),
-
-                  _buildInfoRow(
-                    Icons.access_time,
-                    'Horaire',
-                    '${widget.departureTime} - ${widget.arrivalTime}',
-                  ),
-
-                  _buildInfoRow(
-                    Icons.people_outline,
-                    'Voyageurs',
-                    widget.travelers == 1
-                        ? '1 voyageur'
-                        : '${widget.travelers} voyageurs',
-                  ),
-
-                  _buildInfoRow(
-                    Icons.event_seat_outlined,
-                    'Sièges',
-                    widget.selectedSeats
-                        .map((seat) => 'N° $seat')
-                        .join(', '),
-                  ),
-
-                  if (widget.reservationId != null)
-                    _buildInfoRow(
-                      Icons.confirmation_number_outlined,
-                      'Réservation',
-                      'N° ${widget.reservationId}',
-                    ),
-
-                  // ==================================================
-                  // VOYAGEURS
-                  // ==================================================
-
-                  if (widget.passengers.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    const Divider(height: 25),
-
-                    const Text(
-                      'Voyageurs',
-                      style: TextStyle(
-                        color: Color(0xFF0A2A66),
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    ...List.generate(
-                      widget.passengers.length,
-                          (index) {
-                        final passenger =
-                        widget.passengers[index];
-
-                        final prenom =
-                        _getPassengerString(
-                          passenger,
-                          [
-                            'prenom',
-                            'prénom',
-                            'firstName',
-                            'firstname',
-                            'first_name',
-                          ],
-                        );
-
-                        final nom =
-                        _getPassengerString(
-                          passenger,
-                          [
-                            'nom',
-                            'lastName',
-                            'lastname',
-                            'last_name',
-                          ],
-                        );
-
-                        dynamic siege =
-                        passenger['siege'];
-
-                        siege ??=
-                        passenger['seat'];
-
-                        siege ??=
-                        passenger['seatNumber'];
-
-                        siege ??=
-                        passenger['seat_number'];
-
-                        if (siege == null &&
-                            index <
-                                widget.selectedSeats.length) {
-                          siege =
-                          widget.selectedSeats[index];
-                        }
-
-                        return Padding(
-                          padding:
-                          const EdgeInsets.only(
-                            bottom: 8,
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.person_outline,
-                                color:
-                                Color(0xFFFF6B00),
-                                size: 20,
-                              ),
-
-                              const SizedBox(width: 8),
-
-                              Expanded(
-                                child: Text(
-                                  '$prenom $nom',
-                                  style:
-                                  const TextStyle(
-                                    color:
-                                    Color(0xFF0A2A66),
-                                    fontWeight:
-                                    FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-
-                              Text(
-                                'Siège $siege',
-                                style:
-                                const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-
-                  const Divider(height: 25),
-
-                  Row(
-                    children: [
-
-                      const Expanded(
-                        child: Text(
-                          'Montant à payer',
-                          style: TextStyle(
-                            color: Color(0xFF0A2A66),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      Text(
-                        _calculateTotal(),
-                        style: const TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // ======================================================
-            // MOYEN DE PAIEMENT
-            // ======================================================
-
-            const Text(
-              'Moyen de paiement',
-              style: TextStyle(
-                color: Color(0xFF0A2A66),
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            _buildPaymentMethod(
-              value: 'mobile_money',
-              icon: Icons.phone_android,
-              title: 'Mobile Money',
-              subtitle: 'Payer avec votre téléphone',
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildPaymentMethod(
-              value: 'card',
-              icon: Icons.credit_card_outlined,
-              title: 'Carte bancaire',
-              subtitle: 'Visa ou Mastercard',
-            ),
-
-            const SizedBox(height: 25),
-
-            // ======================================================
-            // INFORMATIONS PAIEMENT
-            // ======================================================
-
-            if (selectedPaymentMethod == 'mobile_money') ...[
-              const Text(
-                'Détails Mobile Money (OpenPay)',
-                style: TextStyle(
-                  color: Color(0xFF0A2A66),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Numéro de téléphone (format 242XXXXXXXXX)',
-                  hintText: '242066203420',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('MTN Money'),
-                      value: 'MTN',
-                      groupValue: _selectedProvider,
-                      onChanged: (v) {
-                        if (v != null && mounted) setState(() => _selectedProvider = v);
-                      },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<String>(
-                      title: const Text('Airtel Money'),
-                      value: 'AIRTEL',
-                      groupValue: _selectedProvider,
-                      onChanged: (v) {
-                        if (v != null && mounted) setState(() => _selectedProvider = v);
-                      },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            if (selectedPaymentMethod == 'card')
-              _buildCardPaymentSection(),
-
-            const SizedBox(height: 30),
-
-            // ======================================================
-            // BOUTON
-            // ======================================================
-
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-
-              child: ElevatedButton.icon(
-                onPressed:
-                _isProcessing
-                    ? null
-                    : _confirmPayment,
-
-                icon: _isProcessing
-                    ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child:
-                  CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-                    : const Icon(
-                  Icons.lock_outline,
-                ),
-
-                label: Text(
-                  _isProcessing
-                      ? 'Traitement...'
-                      : 'Confirmer le paiement',
-
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                style:
-                ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFFFF6B00),
-
-                  foregroundColor: Colors.white,
-
-                  disabledBackgroundColor:
-                  Colors.grey,
-
-                  elevation: 3,
-
-                  shape:
-                  RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            const Row(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
-              children: [
-
-                Icon(
-                  Icons.lock_outline,
-                  size: 15,
-                  color: Colors.grey,
-                ),
-
-                SizedBox(width: 5),
-
-                Text(
-                  'Paiement sécurisé',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // MOYEN DE PAIEMENT
-  // ============================================================
-
-  Widget _buildPaymentMethod({
-    required String value,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final bool isSelected =
-        selectedPaymentMethod == value;
-
-    return GestureDetector(
-      onTap: () {
-        if (_isProcessing) return;
-
-        setState(() {
-          selectedPaymentMethod = value;
-        });
-      },
-
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-
-        decoration: BoxDecoration(
-          color: Colors.white,
-
-          borderRadius:
-          BorderRadius.circular(18),
-
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFFFF6B00)
-                : Colors.grey.shade200,
-            width: isSelected ? 2 : 1,
-          ),
-
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(
-                alpha: 0.04,
-              ),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-
-        child: Row(
-          children: [
-
-            Container(
-              width: 48,
-              height: 48,
-
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFFFF3EB)
-                    : const Color(0xFFF1F3F7),
-
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-
-              child: Icon(
-                icon,
-                color: isSelected
-                    ? const Color(0xFFFF6B00)
-                    : const Color(0xFF0A2A66),
-                size: 26,
-              ),
-            ),
-
-            const SizedBox(width: 14),
+            _enTete(),
 
             Expanded(
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.lg,
+                ),
                 children: [
 
                   Text(
-                    title,
-                    style: const TextStyle(
-                      color: Color(0xFF0A2A66),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    widget.isPurchase
+                        ? 'Finalisez votre achat'
+                        : 'Finalisez votre réservation',
+                    style: AppText.titre(context),
                   ),
 
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xxs),
 
                   Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 13,
-                    ),
+                    widget.isPurchase
+                        ? 'Finalisez l’achat de votre billet.'
+                        : 'Effectuez le paiement de votre réservation.',
+                    style: AppText.corps(context),
                   ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  _resume(),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  const TkSectionHeader(titre: 'Moyen de paiement'),
+
+                  _choixMoyen(),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  if (selectedPaymentMethod == 'mobile_money')
+                    _sectionMobileMoney(),
+
+                  if (selectedPaymentMethod == 'card') _sectionCarte(),
                 ],
               ),
             ),
 
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
-
-              color: isSelected
-                  ? const Color(0xFFFF6B00)
-                  : Colors.grey,
-            ),
+            _barreAction(),
           ],
         ),
       ),
@@ -689,73 +173,110 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ============================================================
-  // MOBILE MONEY
+  // EN-TÊTE
   // ============================================================
 
-  Widget _buildMobileMoneySection() {
-    return _buildCard(
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
+  Widget _enTete() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          TkIconButton(
+            icone: Icons.arrow_back_rounded,
+            infobulle: 'Retour',
+            onPressed: () => Navigator.pop(context),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text('Paiement', style: AppText.sousTitre(context)),
+          ),
+        ],
+      ),
+    );
+  }
 
+  // ============================================================
+  // RÉSUMÉ
+  // ============================================================
+
+  Widget _resume() {
+    final sieges = widget.selectedSeats.map((s) => 'N° $s').join(', ');
+
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          const Text(
-            'Paiement Mobile Money',
-            style: TextStyle(
-              color: Color(0xFF0A2A66),
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
+          Text(
+            widget.agency,
+            style: AppText.corpsFort(context).copyWith(fontSize: 15),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
 
-          const Text(
-            'Saisissez le numéro associé à votre compte.',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 13,
-            ),
+          _ligne('Trajet', '${widget.departure} → ${widget.destination}'),
+          _ligne('Horaire', '${widget.departureTime} – ${widget.arrivalTime}'),
+          _ligne(
+            'Voyageurs',
+            widget.travelers == 1
+                ? '1 voyageur'
+                : '${widget.travelers} voyageurs',
           ),
+          if (sieges.isNotEmpty) _ligne('Sièges', sieges),
+          if (widget.reservationId != null)
+            _ligne('Réservation', 'N° ${widget.reservationId}'),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.sm),
 
-          TextField(
-            keyboardType:
-            TextInputType.phone,
+          Divider(height: 1, color: AppColors.inactifTheme(context)),
 
-            decoration: InputDecoration(
-              labelText:
-              'Numéro de téléphone',
+          const SizedBox(height: AppSpacing.sm),
 
-              hintText:
-              'Ex : 06 123 45 67',
-
-              prefixIcon:
-              const Icon(
-                Icons.phone_outlined,
-                color: Color(0xFFFF6B00),
+          Row(
+            children: [
+              Text(
+                'Montant à payer',
+                style: AppText.corpsFort(context).copyWith(fontSize: 15),
               ),
-
-              border:
-              OutlineInputBorder(
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-
-              focusedBorder:
-              OutlineInputBorder(
-                borderRadius:
-                BorderRadius.circular(14),
-
-                borderSide:
-                const BorderSide(
-                  color:
-                  Color(0xFFFF6B00),
-                  width: 2,
+              const Spacer(),
+              Text(
+                // _calculateTotal() suffixe déjà « FCFA ».
+                _calculateTotal(),
+                style: AppText.titre(context).copyWith(
+                  fontSize: 22,
+                  color: AppColors.orange,
                 ),
               ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ligne(String intitule, String valeur) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(
+              intitule,
+              style: AppText.petit(context).copyWith(fontSize: 13),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              valeur,
+              style: AppText.corpsFort(context).copyWith(fontSize: 14),
             ),
           ),
         ],
@@ -764,102 +285,259 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ============================================================
+  // CHOIX DU MOYEN DE PAIEMENT
+  // ============================================================
+
+  Widget _choixMoyen() {
+    return Column(
+      children: [
+        _moyen(
+          valeur: 'mobile_money',
+          icone: Icons.smartphone_rounded,
+          titre: 'Mobile Money',
+          sousTitre: 'MTN Money ou Airtel Money',
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        _moyen(
+          valeur: 'card',
+          icone: Icons.credit_card_rounded,
+          titre: 'Carte bancaire',
+          sousTitre: 'Visa ou Mastercard',
+        ),
+      ],
+    );
+  }
+
+  Widget _moyen({
+    required String valeur,
+    required IconData icone,
+    required String titre,
+    required String sousTitre,
+  }) {
+    final choisi = selectedPaymentMethod == valeur;
+
+    return TkCard(
+      accentuee: choisi,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: () {
+        setState(() => selectedPaymentMethod = valeur);
+      },
+      child: Row(
+        children: [
+          Icon(
+            icone,
+            size: 21,
+            color: choisi
+                ? AppColors.orange
+                : AppColors.secondaire(context),
+          ),
+
+          const SizedBox(width: AppSpacing.sm),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  titre,
+                  style: AppText.corpsFort(context).copyWith(fontSize: 15),
+                ),
+                Text(
+                  sousTitre,
+                  style: AppText.petit(context).copyWith(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+
+          Icon(
+            choisi
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_unchecked_rounded,
+            size: 20,
+            color: choisi
+                ? AppColors.orange
+                : AppColors.inactifTheme(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // MOBILE MONEY
+  // ============================================================
+
+  Widget _sectionMobileMoney() {
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Text('Opérateur', style: AppText.label(context)),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          // Deux opérateurs : des pastilles côte à côte se visent mieux
+          // qu'une liste de boutons radio.
+          Row(
+            children: [
+              Expanded(child: _operateur('MTN', 'MTN Money')),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(child: _operateur('AIRTEL', 'Airtel Money')),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          TkField(
+            label: 'Numéro de téléphone',
+            placeholder: '242066203420',
+            controller: _phoneController,
+            clavier: TextInputType.phone,
+            iconeGauche: Icons.phone_outlined,
+          ),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          Text(
+            'Format attendu : 242XXXXXXXXX. Vous recevrez une demande de '
+            'confirmation sur ce numéro.',
+            style: AppText.petit(context).copyWith(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _operateur(String valeur, String libelle) {
+    final choisi = _selectedProvider == valeur;
+
+    return Material(
+      color: choisi
+          ? AppColors.orangeDoux(context)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: () {
+          if (mounted) setState(() => _selectedProvider = valeur);
+        },
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          height: AppSize.controleCompact,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: choisi
+                  ? AppColors.orange
+                  : AppColors.inactifTheme(context),
+              width: choisi ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            libelle,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: choisi
+                  ? AppColors.orange
+                  : AppColors.titre(context),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
   // CARTE BANCAIRE
   // ============================================================
 
-  Widget _buildCardPaymentSection() {
-    return _buildCard(
+  Widget _sectionCarte() {
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          const Text(
-            'Carte bancaire',
-            style: TextStyle(
-              color: Color(0xFF0A2A66),
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-            ),
+          const TkField(
+            label: 'Numéro de carte',
+            placeholder: '1234 5678 9012 3456',
+            iconeGauche: Icons.credit_card_rounded,
           ),
 
-          const SizedBox(height: 18),
-
-          TextField(
-            keyboardType:
-            TextInputType.number,
-
-            decoration: InputDecoration(
-              labelText:
-              'Numéro de carte',
-
-              hintText:
-              '1234 5678 9012 3456',
-
-              prefixIcon:
-              const Icon(
-                Icons.credit_card_outlined,
-                color: Color(0xFFFF6B00),
-              ),
-
-              border:
-              OutlineInputBorder(
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 15),
+          const SizedBox(height: AppSpacing.sm),
 
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              Expanded(
-                child: TextField(
-                  keyboardType:
-                  TextInputType.number,
-
-                  decoration:
-                  InputDecoration(
-                    labelText:
-                    'Expiration',
-
-                    hintText:
-                    'MM/AA',
-
-                    border:
-                    OutlineInputBorder(
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
-                  ),
+              const Expanded(
+                child: TkField(
+                  label: 'Expiration',
+                  placeholder: 'MM/AA',
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: TextField(
-                  keyboardType:
-                  TextInputType.number,
-
-                  obscureText: true,
-
-                  decoration:
-                  InputDecoration(
-                    labelText: 'CVV',
-
-                    hintText: '123',
-
-                    border:
-                    OutlineInputBorder(
-                      borderRadius:
-                      BorderRadius.circular(14),
-                    ),
-                  ),
+              const SizedBox(width: AppSpacing.sm),
+              const Expanded(
+                child: TkField(
+                  label: 'CVV',
+                  placeholder: '123',
                 ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // BARRE D'ACTION
+  // ============================================================
+
+  Widget _barreAction() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+        AppSpacing.margeEcran,
+        AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.fond(context),
+        border: Border(
+          top: BorderSide(color: AppColors.inactifTheme(context)),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+
+          TkButton(
+            libelle: _isProcessing
+                ? 'Traitement…'
+                : 'Confirmer le paiement',
+            onPressed: _isProcessing ? null : _confirmPayment,
+            enChargement: _isProcessing,
+          ),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 13,
+                color: AppColors.secondaire(context),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Paiement sécurisé',
+                style: AppText.petit(context).copyWith(fontSize: 12),
               ),
             ],
           ),
@@ -1917,107 +1595,5 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
 
     return '${buffer.toString()} FCFA';
-  }
-
-  // ============================================================
-  // CARD
-  // ============================================================
-
-  Widget _buildCard({
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-
-      padding:
-      const EdgeInsets.all(20),
-
-      decoration:
-      BoxDecoration(
-        color: Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(20),
-
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.black.withValues(
-              alpha: 0.05,
-            ),
-
-            blurRadius: 12,
-
-            offset:
-            const Offset(0, 4),
-          ),
-        ],
-      ),
-
-      child: child,
-    );
-  }
-
-  // ============================================================
-  // INFO ROW
-  // ============================================================
-
-  Widget _buildInfoRow(
-      IconData icon,
-      String title,
-      String value,
-      ) {
-    return Padding(
-      padding:
-      const EdgeInsets.only(
-        bottom: 12,
-      ),
-
-      child: Row(
-        children: [
-
-          Icon(
-            icon,
-            color:
-            const Color(0xFFFF6B00),
-            size: 22,
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Text(
-              title,
-
-              style:
-              const TextStyle(
-                color: Colors.grey,
-                fontSize: 13,
-              ),
-            ),
-          ),
-
-          Flexible(
-            child: Text(
-              value,
-
-              textAlign:
-              TextAlign.right,
-
-              style:
-              const TextStyle(
-                color:
-                Color(0xFF0A2A66),
-
-                fontWeight:
-                FontWeight.w600,
-
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

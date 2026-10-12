@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/tk/tk.dart';
+
 import '../services/support_service.dart';
 
 class ConversationScreen extends StatefulWidget {
@@ -126,17 +128,7 @@ class _ConversationScreenState
         _isSending = false;
       });
 
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString(),
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      TkToast.erreur(context, e.toString());
     }
   }
 

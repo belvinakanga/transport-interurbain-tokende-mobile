@@ -8,7 +8,11 @@ import 'package:http/http.dart' as http;
 import '../auth/login_screen.dart';
 import '../voyages/mes_voyages_screen.dart';
 import 'widgets/home_search_card.dart';
-import 'widgets/quick_service_card.dart';
+import 'widgets/tk_next_trip_card.dart';
+import '../../services/prochain_voyage_service.dart';
+import '../../config/app_config.dart';
+import '../../utils/format_trajet.dart';
+import '../../widgets/tk/tk.dart';
 
 import '../profile/profile_screen.dart';
 import '../profile/personal_information_screen.dart';
@@ -68,6 +72,28 @@ class _HomeScreenState extends State<HomeScreen> {
   // ============================================================
   // URL API LARAVEL
   // ============================================================
+
+  // ============================================================
+  // PROCHAIN DÉPART
+  //
+  // Déduit côté application à partir de /reservations et /achats, qui sont
+  // déjà filtrés par utilisateur. Aucun endpoint n'a été ajouté au backend.
+  // Le Future est créé à la déclaration pour ne pas avoir à modifier
+  // initState().
+  // ============================================================
+
+  /// Onglet ouvert dans « Mes voyages » : 0 Réservations, 1 Achats.
+  late int _voyagesTabIndex = widget.initialVoyagesTabIndex;
+
+  /// Pilote le glissement horizontal entre les quatre onglets.
+  late final PageController _pageController =
+      PageController(initialPage: _currentIndex);
+
+  final ProchainVoyageService _serviceProchainVoyage =
+      ProchainVoyageService();
+
+  late Future<ProchainVoyage?> _futureProchainVoyage =
+      _serviceProchainVoyage.charger();
 
   String get apiBaseUrl {
     if (kIsWeb) {
@@ -208,10 +234,26 @@ class _HomeScreenState extends State<HomeScreen> {
   // CHANGEMENT DE PAGE
   // ============================================================
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _onNavigationItemTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
+
+    // L'appui et le glissement pilotent la même vue : on anime le PageView
+    // pour que les deux restent cohérents.
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    }
 
     // Lorsque l'utilisateur revient sur Accueil,
     // on recharge son nom.
@@ -226,462 +268,285 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHomePage() {
     return Scaffold(
-      backgroundColor: lightBackground,
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
+        child: RefreshIndicator(
+          color: AppColors.orange,
+          onRefresh: _rafraichirAccueil,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.margeEcran,
+              AppSpacing.xs,
+              AppSpacing.margeEcran,
+              // Place réservée à la barre flottante.
+              108,
+            ),
             children: [
 
-              // ==================================================
-              // HEADER
-              // ==================================================
+              _enTeteAccueil(),
 
-              Container(
-                width: double.infinity,
+              const SizedBox(height: AppSpacing.xl),
 
-                padding:
-                const EdgeInsets.fromLTRB(
-                  20,
-                  25,
-                  20,
-                  30,
-                ),
+              _carteProchainVoyage(),
 
-                decoration:
-                const BoxDecoration(
-                  color: primaryColor,
+              const SizedBox(height: AppSpacing.md),
 
-                  borderRadius:
-                  BorderRadius.only(
-                    bottomLeft:
-                    Radius.circular(30),
+              _boutonNouvelleRecherche(),
 
-                    bottomRight:
-                    Radius.circular(30),
-                  ),
-                ),
+              const SizedBox(height: AppSpacing.xxl),
 
-                child: Column(
-                  children: [
+              const TkSectionHeader(titre: 'Raccourcis'),
 
-                    Row(
-                      children: [
-
-                        // AVATAR
-
-                        const CircleAvatar(
-                          radius: 25,
-
-                          backgroundColor:
-                          Colors.white,
-
-                          child: Icon(
-                            Icons.person,
-                            color:
-                            primaryColor,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          width: 15,
-                        ),
-
-                        // NOM
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-
-                            children: [
-
-                              const Text(
-                                'Bonjour 👋',
-
-                                style:
-                                TextStyle(
-                                  color:
-                                  Colors.white70,
-
-                                  fontSize: 15,
-                                ),
-                              ),
-
-                              const SizedBox(
-                                height: 4,
-                              ),
-
-                              Text(
-                                _isLoadingUser
-                                    ? '...'
-                                    : _userName,
-
-                                maxLines: 1,
-
-                                overflow:
-                                TextOverflow
-                                    .ellipsis,
-
-                                style:
-                                const TextStyle(
-                                  color:
-                                  Colors.white,
-
-                                  fontSize: 24,
-
-                                  fontWeight:
-                                  FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // NOTIFICATIONS
-
-                        IconButton(
-                          onPressed: () {
-                            ScaffoldMessenger
-                                .of(context)
-                                .hideCurrentSnackBar();
-
-                            ScaffoldMessenger
-                                .of(context)
-                                .showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Les notifications seront disponibles prochainement.',
-                                ),
-                              ),
-                            );
-                          },
-
-                          icon: const Icon(
-                            Icons
-                                .notifications_none,
-
-                            color:
-                            Colors.white,
-
-                            size: 30,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(
-                      height: 20,
-                    ),
-
-                    const Text(
-                      'Réservez vos trajets en toute simplicité',
-
-                      textAlign:
-                      TextAlign.center,
-
-                      style:
-                      TextStyle(
-                        color:
-                        Colors.white,
-
-                        fontSize: 18,
-
-                        fontWeight:
-                        FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(
-                height: 25,
-              ),
-
-              // ==================================================
-              // RECHERCHE
-              // ==================================================
-
-              const HomeSearchCard(),
-
-              const SizedBox(
-                height: 30,
-              ),
-
-              // ==================================================
-              // SERVICES RAPIDES
-              // ==================================================
-
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 20,
-                ),
-
-                child: Row(
-                  children: [
-
-                    // MES BILLETS
-
-                    Expanded(
-                      child:
-                      QuickServiceCard(
-                        icon: Icons
-                            .confirmation_number_outlined,
-
-                        iconColor:
-                        Colors.blue,
-
-                        backgroundColor:
-                        const Color(
-                          0xFFEAF2FF,
-                        ),
-
-                        title:
-                        'Mes billets',
-
-                        onTap: () {
-                          _openMesVoyages(1);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(
-                      width: 10,
-                    ),
-
-                    // RÉSERVATIONS
-
-                    Expanded(
-                      child:
-                      QuickServiceCard(
-                        icon: Icons
-                            .book_online_outlined,
-
-                        iconColor:
-                        Colors.orange,
-
-                        backgroundColor:
-                        const Color(
-                          0xFFFFF3E8,
-                        ),
-
-                        title:
-                        'Réservations',
-
-                        onTap: () {
-                          _openMesVoyages(0);
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(
-                      width: 10,
-                    ),
-
-                    // COLIS
-
-                    Expanded(
-                      child:
-                      QuickServiceCard(
-                        icon: Icons
-                            .local_shipping_outlined,
-
-                        iconColor:
-                        Colors.green,
-
-                        backgroundColor:
-                        const Color(
-                          0xFFE8F8EE,
-                        ),
-
-                        title:
-                        'Colis',
-
-                        onTap: () {
-                          _showComingSoon(
-                            'Le service colis sera disponible prochainement.',
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(
-                      width: 10,
-                    ),
-
-                    // SUPPORT
-
-                    Expanded(
-                      child:
-                      QuickServiceCard(
-                        icon:
-                        Icons.support_agent,
-
-                        iconColor:
-                        Colors.purple,
-
-                        backgroundColor:
-                        const Color(
-                          0xFFF4ECFF,
-                        ),
-
-                        title:
-                        'Support',
-
-                        onTap: () {
-                          _showComingSoon(
-                            'Le support sera disponible prochainement.',
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(
-                height: 30,
-              ),
-
-              // ==================================================
-              // SECTION INFORMATIVE
-              // ==================================================
-
-              Padding(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 20,
-                ),
-
-                child: Container(
-                  width: double.infinity,
-
-                  padding:
-                  const EdgeInsets.all(20),
-
-                  decoration:
-                  BoxDecoration(
-                    color: Colors.white,
-
-                    borderRadius:
-                    BorderRadius.circular(
-                      20,
-                    ),
-
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                        Colors.black
-                            .withValues(
-                          alpha: 0.05,
-                        ),
-
-                        blurRadius: 12,
-
-                        offset:
-                        const Offset(
-                          0,
-                          4,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  child: Row(
-                    children: [
-
-                      Container(
-                        width: 50,
-                        height: 50,
-
-                        decoration:
-                        BoxDecoration(
-                          color:
-                          const Color(
-                            0xFFFFF3EB,
-                          ),
-
-                          borderRadius:
-                          BorderRadius
-                              .circular(
-                            14,
-                          ),
-                        ),
-
-                        child: const Icon(
-                          Icons
-                              .verified_user_outlined,
-
-                          color:
-                          orangeColor,
-
-                          size: 27,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 14,
-                      ),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-
-                          children: [
-
-                            const Text(
-                              'Voyagez en toute confiance',
-
-                              style:
-                              TextStyle(
-                                color:
-                                primaryColor,
-
-                                fontSize: 15,
-
-                                fontWeight:
-                                FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 5,
-                            ),
-
-                            Text(
-                              'Réservez votre siège et retrouvez facilement vos voyages.',
-
-                              style:
-                              TextStyle(
-                                color:
-                                Colors.grey
-                                    .shade600,
-
-                                fontSize: 12,
-
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 30,
-              ),
+              _grilleRaccourcis(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // EN-TÊTE
+  // ------------------------------------------------------------
+
+  Widget _enTeteAccueil() {
+    return Row(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: AppColors.orangeDoux(context),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.person_rounded,
+            color: AppColors.orange,
+            size: 22,
+          ),
+        ),
+
+        const SizedBox(width: AppSpacing.sm),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Bonjour', style: AppText.petit(context)),
+              Text(
+                _isLoadingUser ? '…' : _userName,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.corpsFort(context).copyWith(fontSize: 18),
+              ),
+            ],
+          ),
+        ),
+
+        TkIconButton(
+          icone: Icons.notifications_none_rounded,
+          infobulle: 'Notifications',
+          onPressed: () {
+            _showComingSoon(
+              'Les notifications seront disponibles prochainement.',
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // ------------------------------------------------------------
+  // PROCHAIN DÉPART
+  // ------------------------------------------------------------
+
+  Widget _carteProchainVoyage() {
+    return FutureBuilder<ProchainVoyage?>(
+      future: _futureProchainVoyage,
+      builder: (context, snapshot) {
+        final enCours =
+            snapshot.connectionState == ConnectionState.waiting;
+
+        final voyage = snapshot.data;
+
+        return TkNextTripCard(
+          voyage: voyage,
+          enChargement: enCours,
+          libelleAction: (voyage?.aUnBillet ?? false)
+              ? 'Voir mon billet'
+              : 'Voir ma réservation',
+          onVoirBillet: voyage == null
+              ? null
+              : () => _ouvrirBillet(voyage),
+          onChercher: () => _onNavigationItemTapped(1),
+        );
+      },
+    );
+  }
+
+  /// Ouvre le billet du prochain départ.
+  ///
+  /// Tant qu'aucun billet n'a été émis — réservation non encore payée —
+  /// on bascule sur « Mes voyages » plutôt que d'afficher un billet vide.
+  void _ouvrirBillet(ProchainVoyage voyage) {
+    if (!voyage.aUnBillet) {
+      _openMesVoyages(0);
+      return;
+    }
+
+    final qr = voyage.qrCode ?? '-';
+
+    TkBilletSheet.afficher(
+      context,
+      urlPublique: AppConfig.urlBillet(qr),
+      billet: BilletAffichage(
+        numero: voyage.numeroBillet ?? '-',
+        qrCode: qr,
+        agence: voyage.nomAgence,
+        adresseAgence: voyage.adresseAgence,
+        depart: voyage.depart,
+        arrivee: voyage.arrivee,
+        date: FormatTrajet.date(voyage.trajet) ??
+            FormatTrajet.dateDepuisDateTime(voyage.dateHeureDepart),
+        heure: FormatTrajet.heureDepart(voyage.trajet) ??
+            FormatTrajet.heureDepuisDateTime(voyage.dateHeureDepart),
+        voyageurs: voyage.voyageurs,
+        sieges: voyage.sieges,
+      ),
+    );
+  }
+
+  /// Relance la requête du prochain départ et recharge le nom affiché.
+  Future<void> _rafraichirAccueil() async {
+    final future = _serviceProchainVoyage.charger();
+
+    setState(() {
+      _futureProchainVoyage = future;
+    });
+
+    await Future.wait([
+      future,
+      _loadUserInformation(),
+    ]);
+  }
+
+  // ------------------------------------------------------------
+  // RECHERCHE REPLIÉE
+  // ------------------------------------------------------------
+
+  Widget _boutonNouvelleRecherche() {
+    return TkCard(
+      onTap: () => _onNavigationItemTapped(1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.search_rounded,
+            size: 20,
+            color: AppColors.orange,
+          ),
+
+          const SizedBox(width: AppSpacing.sm),
+
+          Expanded(
+            child: Text(
+              'Chercher un nouveau trajet',
+              style: AppText.corpsFort(context),
+            ),
+          ),
+
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: AppColors.secondaire(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------
+  // RACCOURCIS
+  // ------------------------------------------------------------
+
+  Widget _grilleRaccourcis() {
+    final raccourcis = <_Raccourci>[
+      _Raccourci(
+        icone: Icons.confirmation_number_outlined,
+        libelle: 'Mes billets',
+        onTap: () => _openMesVoyages(1),
+      ),
+      _Raccourci(
+        icone: Icons.event_note_outlined,
+        libelle: 'Réservations',
+        onTap: () => _openMesVoyages(0),
+      ),
+      _Raccourci(
+        icone: Icons.headset_mic_outlined,
+        libelle: 'Assistance',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const HelpSupportScreen(),
+            ),
+          );
+        },
+      ),
+    ];
+
+    // Trois colonnes, trois raccourcis : une rangée pleine, sans troncature.
+    return GridView.count(
+      crossAxisCount: 3,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.sm,
+      mainAxisSpacing: AppSpacing.sm,
+      childAspectRatio: 1,
+      children: [
+        for (final r in raccourcis)
+          TkCard(
+            onTap: r.onTap,
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.orangeDoux(context),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    r.icone,
+                    size: 20,
+                    color: AppColors.orange,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xs),
+
+                Text(
+                  r.libelle,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.petit(context).copyWith(
+                    fontSize: 13,
+                    height: 1.25,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.titre(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -691,39 +556,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchPage() {
     return Scaffold(
-      backgroundColor:
-      lightBackground,
-
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
-
-        foregroundColor:
-        Colors.white,
-
-        elevation: 0,
-
-        title: const Text(
-          'Rechercher un trajet',
-
-          style: TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
-      ),
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child:
-        SingleChildScrollView(
-          padding:
-          const EdgeInsets.only(
-            top: 20,
-            bottom: 30,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(
+            top: AppSpacing.md,
+            // Place réservée à la barre flottante.
+            bottom: 108,
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-          child:
-          const HomeSearchCard(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  0,
+                  AppSpacing.margeEcran,
+                  AppSpacing.md,
+                ),
+                child: Text(
+                  'Où allez-vous ?',
+                  style: AppText.titre(context),
+                ),
+              ),
+
+              const HomeSearchCard(),
+            ],
+          ),
         ),
       ),
     );
@@ -792,12 +653,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // OUVRIR MES VOYAGES
   // ============================================================
 
-  void _openMesVoyages(
-      int tabIndex,
-      ) {
+  /// Ouvre « Mes voyages » sur l'onglet demandé.
+  ///
+  /// 0 = Réservations, 1 = Achats. Le paramètre était ignoré jusqu'ici :
+  /// tous les raccourcis arrivaient sur l'onglet par défaut.
+  void _openMesVoyages(int tabIndex) {
     setState(() {
-      _currentIndex = 2;
+      _voyagesTabIndex = tabIndex.clamp(0, 1);
     });
+
+    _onNavigationItemTapped(2);
   }
 
   // ============================================================
@@ -951,16 +816,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Impossible de terminer la déconnexion.',
-          ),
-
-          behavior:
-          SnackBarBehavior.floating,
-        ),
+      TkToast.erreur(
+        context,
+        'Impossible de terminer la déconnexion.',
       );
     }
   }
@@ -972,22 +830,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showComingSoon(
       String message,
       ) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content:
-          Text(message),
-
-          behavior:
-          SnackBarBehavior.floating,
-
-          duration:
-          const Duration(
-            seconds: 3,
-          ),
-        ),
-      );
+    TkToast.attente(context, message);
   }
 
   // ============================================================
@@ -999,12 +842,22 @@ class _HomeScreenState extends State<HomeScreen> {
       BuildContext context,
       ) {
     return Scaffold(
-      backgroundColor:
-      lightBackground,
+      backgroundColor: AppColors.fond(context),
 
-      body: IndexedStack(
-        index:
-        _currentIndex,
+      // La barre flotte au-dessus du contenu : celui-ci passe dessous
+      // quand on fait défiler, d'où l'absence de bottomNavigationBar.
+      extendBody: true,
+
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          if (index == _currentIndex) return;
+
+          setState(() => _currentIndex = index);
+
+          // Même rafraîchissement que sur un appui d'onglet.
+          if (index == 0) _loadUserInformation();
+        },
 
         children: [
 
@@ -1027,9 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // ======================================================
 
           MesVoyagesScreen(
-            initialTabIndex:
-            widget
-                .initialVoyagesTabIndex,
+            initialTabIndex: _voyagesTabIndex,
           ),
 
           // ======================================================
@@ -1041,127 +892,153 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // ========================================================
-      // BARRE DE NAVIGATION
+      // BARRE DE NAVIGATION FLOTTANTE
       // ========================================================
 
-      bottomNavigationBar:
-      NavigationBar(
-        selectedIndex:
-        _currentIndex,
+      floatingActionButton: _barreNavigation(),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.centerFloat,
+    );
+  }
+  // ============================================================
+  // BARRE DE NAVIGATION
+  // ============================================================
 
-        onDestinationSelected:
-        _onNavigationItemTapped,
+  Widget _barreNavigation() {
+    final sombre = Theme.of(context).brightness == Brightness.dark;
 
-        backgroundColor:
-        Colors.white,
+    const destinations = <(IconData, IconData, String)>[
+      (Icons.home_outlined, Icons.home_rounded, 'Accueil'),
+      (Icons.search_rounded, Icons.search_rounded, 'Rechercher'),
+      (
+        Icons.confirmation_number_outlined,
+        Icons.confirmation_number_rounded,
+        'Mes voyages',
+      ),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Profil'),
+    ];
 
-        indicatorColor:
-        const Color(
-          0xFFFFF3EB,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: sombre
+              ? AppColors.fondSombre
+              : Colors.white,
+          borderRadius: BorderRadius.circular(AppRadius.pleinRond),
+          border: Border.all(color: AppColors.inactifTheme(context)),
+          // Seule ombre de l'application : la barre flotte au-dessus du
+          // contenu qui défile dessous, il lui faut un décollement réel.
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.bleuNuit.withValues(
+                alpha: sombre ? 0.45 : 0.10,
+              ),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-
-        elevation: 8,
-
-        destinations: [
-
-          // ====================================================
-          // ACCUEIL
-          // ====================================================
-
-          NavigationDestination(
-            icon: Icon(
-              Icons.home_outlined,
-
-              color:
-              Colors.grey.shade700,
-            ),
-
-            selectedIcon:
-            const Icon(
-              Icons.home,
-
-              color:
-              orangeColor,
-            ),
-
-            label:
-            'Accueil',
-          ),
-
-          // ====================================================
-          // RECHERCHER
-          // ====================================================
-
-          NavigationDestination(
-            icon: Icon(
-              Icons.search_outlined,
-
-              color:
-              Colors.grey.shade700,
-            ),
-
-            selectedIcon:
-            const Icon(
-              Icons.search,
-
-              color:
-              orangeColor,
-            ),
-
-            label:
-            'Rechercher',
-          ),
-
-          // ====================================================
-          // MES VOYAGES
-          // ====================================================
-
-          NavigationDestination(
-            icon: Icon(
-              Icons
-                  .confirmation_number_outlined,
-
-              color:
-              Colors.grey.shade700,
-            ),
-
-            selectedIcon:
-            const Icon(
-              Icons.confirmation_number,
-
-              color:
-              orangeColor,
-            ),
-
-            label:
-            'Mes voyages',
-          ),
-
-          // ====================================================
-          // PROFIL
-          // ====================================================
-
-          NavigationDestination(
-            icon: Icon(
-              Icons.person_outline,
-
-              color:
-              Colors.grey.shade700,
-            ),
-
-            selectedIcon:
-            const Icon(
-              Icons.person,
-
-              color:
-              orangeColor,
-            ),
-
-            label:
-            'Profil',
-          ),
-        ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < destinations.length; i++)
+              _ongletNavigation(
+                index: i,
+                icone: destinations[i].$1,
+                iconeActive: destinations[i].$2,
+                libelle: destinations[i].$3,
+              ),
+          ],
+        ),
       ),
     );
   }
+
+  /// Un onglet de la barre.
+  ///
+  /// L'onglet actif s'élargit pour afficher son libellé ; les autres se
+  /// réduisent à leur icône. Le libellé reste donc lisible sans encombrer
+  /// la barre, et l'animation suit le glissement.
+  Widget _ongletNavigation({
+    required int index,
+    required IconData icone,
+    required IconData iconeActive,
+    required String libelle,
+  }) {
+    final actif = _currentIndex == index;
+
+    return Semantics(
+      selected: actif,
+      button: true,
+      label: libelle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onNavigationItemTapped(index),
+          borderRadius: BorderRadius.circular(AppRadius.pleinRond),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+            height: 46,
+            padding: EdgeInsets.symmetric(
+              horizontal: actif ? AppSpacing.md : AppSpacing.sm + 2,
+            ),
+            decoration: BoxDecoration(
+              color: actif
+                  ? AppColors.orangeDoux(context)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.pleinRond),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  actif ? iconeActive : icone,
+                  size: 21,
+                  color: actif
+                      ? AppColors.orange
+                      : AppColors.secondaire(context),
+                ),
+
+                // Le libellé apparaît en s'élargissant, sans à-coup.
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  child: actif
+                      ? Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Text(
+                            libelle,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.orange,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+}
+
+/// Description d'un raccourci de l'accueil.
+class _Raccourci {
+  final IconData icone;
+  final String libelle;
+  final VoidCallback onTap;
+
+  const _Raccourci({
+    required this.icone,
+    required this.libelle,
+    required this.onTap,
+  });
 }

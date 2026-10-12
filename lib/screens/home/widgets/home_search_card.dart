@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../services/villes_service.dart';
+import '../../../widgets/tk/tk.dart';
+
 import '../../search/search_results_screen.dart';
 
 class HomeSearchCard extends StatefulWidget {
@@ -15,15 +18,26 @@ class _HomeSearchCardState extends State<HomeSearchCard> {
   DateTime? departureDate;
   int travelers = 1;
 
-  final List<String> cities = [
-    'Brazzaville',
-    'Pointe-Noire',
-    'Dolisie',
-    'Nkayi',
-    'Oyo',
-    'Ouesso',
-    'Impfondo',
-  ];
+  /// Villes proposées, lues depuis le référentiel du serveur.
+  ///
+  /// Les agences ajoutent leurs villes depuis le back-office : la liste
+  /// ne peut plus être figée dans l'application. En attendant la réponse,
+  /// on affiche le repli intégré plutôt qu'un sélecteur vide.
+  List<String> cities = VillesService.villesParDefaut;
+
+  @override
+  void initState() {
+    super.initState();
+    _chargerVilles();
+  }
+
+  Future<void> _chargerVilles() async {
+    final villes = await VillesService.charger();
+
+    if (!mounted) return;
+
+    setState(() => cities = villes);
+  }
 
   // ============================================================
   // CHOISIR LE DÉPART
@@ -328,13 +342,9 @@ class _HomeSearchCardState extends State<HomeSearchCard> {
   // ============================================================
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF0A2A66),
-      ),
-    );
+    // Ces messages signalent un champ manquant : ce sont des erreurs de
+    // saisie, pas de simples informations.
+    TkToast.erreur(context, message);
   }
 
   // ============================================================
@@ -358,134 +368,112 @@ class _HomeSearchCardState extends State<HomeSearchCard> {
   // ============================================================
 
   @override
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 20,
-      ),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.margeEcran,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ======================================================
-          // DÉPART
-          // ======================================================
 
-          GestureDetector(
-            onTap: chooseDeparture,
-            child: _buildTile(
-              icon: Icons.location_on_outlined,
-              title: 'Départ',
-              value: departure ?? 'Choisir le lieu de départ',
+          TkCard(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
             ),
-          ),
+            child: Column(
+              children: [
 
-          const Divider(height: 30),
-
-          // ======================================================
-          // DESTINATION + BOUTON INVERSION
-          // ======================================================
-
-          Stack(
-            children: [
-              GestureDetector(
-                onTap: chooseDestination,
-                child: _buildTile(
-                  icon: Icons.location_on,
-                  title: 'Destination',
-                  value:
-                  destination ?? 'Choisir la destination',
+                _ligne(
+                  icone: Icons.trip_origin_rounded,
+                  intitule: 'Départ',
+                  valeur: departure,
+                  valeurParDefaut: 'Choisir le lieu de départ',
+                  onTap: chooseDeparture,
                 ),
-              ),
 
-              Positioned(
-                right: 0,
-                top: 8,
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: const Color(0xFFFFF3EB),
-                  child: IconButton(
-                    onPressed: swapLocations,
-                    icon: const Icon(
-                      Icons.swap_vert,
-                      color: Color(0xFFFF6B00),
-                    ),
+                // Le bouton d'inversion chevauche le filet qui sépare les
+                // deux villes : sa position dit ce qu'il échange.
+                SizedBox(
+                  height: 1,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Divider(
+                        height: 1,
+                        color: AppColors.inactifTheme(context),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: -18,
+                        child: _boutonInversion(),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
 
-          const Divider(height: 30),
-
-          // ======================================================
-          // DATE
-          // ======================================================
-
-          GestureDetector(
-            onTap: chooseDate,
-            child: _buildTile(
-              icon: Icons.calendar_month_outlined,
-              title: 'Date de départ',
-              value: formattedDate,
-            ),
-          ),
-
-          const Divider(height: 30),
-
-          // ======================================================
-          // VOYAGEURS
-          // ======================================================
-
-          GestureDetector(
-            onTap: chooseTravelers,
-            child: _buildTile(
-              icon: Icons.person_outline,
-              title: 'Voyageurs',
-              value: travelers == 1
-                  ? '1 voyageur'
-                  : '$travelers voyageurs',
-            ),
-          ),
-
-          const SizedBox(height: 25),
-
-          // ======================================================
-          // BOUTON RECHERCHE
-          // ======================================================
-
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: searchTrips,
-              icon: const Icon(Icons.search),
-              label: const Text(
-                'Rechercher un trajet',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                _ligne(
+                  icone: Icons.place_rounded,
+                  intitule: 'Destination',
+                  valeur: destination,
+                  valeurParDefaut: 'Choisir la destination',
+                  onTap: chooseDestination,
                 ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B00),
-                foregroundColor: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+
+                Divider(
+                  height: 1,
+                  color: AppColors.inactifTheme(context),
                 ),
-              ),
+
+                // Date et voyageurs tiennent sur une seule ligne : tous deux
+                // ont une valeur par défaut évidente, ils n'ont pas à peser
+                // autant que le choix des villes.
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ligne(
+                        icone: Icons.event_rounded,
+                        intitule: 'Date',
+                        valeur:
+                            departureDate == null ? null : formattedDate,
+                        valeurParDefaut: 'Choisir une date',
+                        onTap: chooseDate,
+                        compact: true,
+                      ),
+                    ),
+
+                    Container(
+                      width: 1,
+                      height: 34,
+                      color: AppColors.inactifTheme(context),
+                    ),
+
+                    Expanded(
+                      child: _ligne(
+                        icone: Icons.person_outline_rounded,
+                        intitule: 'Voyageurs',
+                        valeur: travelers == 1
+                            ? '1 voyageur'
+                            : '$travelers voyageurs',
+                        valeurParDefaut: '1 voyageur',
+                        onTap: chooseTravelers,
+                        compact: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          TkButton(
+            libelle: 'Rechercher un trajet',
+            onPressed: searchTrips,
+            icone: Icons.search_rounded,
           ),
         ],
       ),
@@ -493,58 +481,86 @@ class _HomeSearchCardState extends State<HomeSearchCard> {
   }
 
   // ============================================================
-  // TILE
+  // BOUTON D'INVERSION
   // ============================================================
 
-  Widget _buildTile({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          color: const Color(0xFFFF6B00),
-          size: 28,
-        ),
-
-        const SizedBox(width: 15),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: value.startsWith('Choisir')
-                      ? Colors.grey.shade500
-                      : const Color(0xFF0A2A66),
-                ),
-              ),
-            ],
+  Widget _boutonInversion() {
+    return Material(
+      color: AppColors.orangeDoux(context),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        onTap: swapLocations,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: const SizedBox(
+          width: 36,
+          height: 36,
+          child: Icon(
+            Icons.swap_vert_rounded,
+            size: 20,
+            color: AppColors.orange,
           ),
         ),
+      ),
+    );
+  }
 
-        const Icon(
-          Icons.chevron_right,
-          color: Colors.grey,
+  // ============================================================
+  // LIGNE DE SÉLECTION
+  // ============================================================
+
+  /// Intitulé au-dessus, valeur en dessous.
+  ///
+  /// Quand [valeur] vaut `null`, [valeurParDefaut] s'affiche en gris :
+  /// l'utilisateur voit d'un coup d'œil ce qu'il lui reste à renseigner.
+  Widget _ligne({
+    required IconData icone,
+    required String intitule,
+    required String? valeur,
+    required String valeurParDefaut,
+    required VoidCallback onTap,
+    bool compact = false,
+  }) {
+    final renseigne = valeur != null && valeur.isNotEmpty;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? AppSpacing.sm : AppSpacing.md,
+          horizontal: AppSpacing.xxs,
         ),
-      ],
+        child: Row(
+          children: [
+            Icon(icone, size: 18, color: AppColors.orange),
+
+            const SizedBox(width: AppSpacing.sm),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    intitule.toUpperCase(),
+                    style: AppText.label(context).copyWith(fontSize: 11),
+                  ),
+
+                  const SizedBox(height: 2),
+
+                  Text(
+                    renseigne ? valeur : valeurParDefaut,
+                    overflow: TextOverflow.ellipsis,
+                    style: renseigne
+                        ? AppText.corpsFort(context).copyWith(fontSize: 15)
+                        : AppText.corps(context).copyWith(fontSize: 15),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

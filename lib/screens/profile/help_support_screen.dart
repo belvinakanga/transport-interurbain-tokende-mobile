@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../support/support_screen.dart';
+import '../../widgets/tk/tk.dart';
 
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({
@@ -20,19 +21,16 @@ class HelpSupportScreen extends StatelessWidget {
   // ============================================================
 
   void _showMessage(
-      BuildContext context,
-      String message,
-      ) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    BuildContext context,
+    String message,
+  ) {
+    // Appelé lorsque le téléphone ou la messagerie ne s'ouvre pas.
+    TkToast.erreur(context, message);
   }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
 
   // ============================================================
   // BUILD
@@ -41,254 +39,201 @@ class HelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-
-        title: const Text(
-          'Aide & assistance',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      // ========================================================
-      // CONTENU
-      // ========================================================
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        child: Column(
           children: [
-            // ====================================================
-            // INTRODUCTION
-            // ====================================================
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(24),
+            // En-tête
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.xs,
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
               ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Icon(
-                    Icons.support_agent,
-                    color: Colors.white,
-                    size: 42,
+                  TkIconButton(
+                    icone: Icons.arrow_back_rounded,
+                    infobulle: 'Retour',
+                    onPressed: () => Navigator.pop(context),
                   ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Aide & assistance',
+                      style: AppText.sousTitre(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                  SizedBox(height: 15),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                children: [
 
                   Text(
                     'Comment pouvons-nous vous aider ?',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppText.titre(context),
                   ),
 
-                  SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
 
                   Text(
-                    'Retrouvez les réponses aux questions '
-                        'les plus fréquentes ou contactez notre équipe.',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      height: 1.5,
+                    'Retrouvez les réponses aux questions les plus '
+                    'fréquentes, ou contactez notre équipe.',
+                    style: AppText.corps(context),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ----------------------------------------------------
+                  // QUESTIONS FRÉQUENTES
+                  // ----------------------------------------------------
+
+                  const TkSectionHeader(titre: 'Questions fréquentes'),
+
+                  TkCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _question(
+                          context,
+                          question: 'Comment réserver un voyage ?',
+                          reponse:
+                              'Recherchez votre trajet, choisissez une '
+                              'agence, sélectionnez votre siège puis '
+                              'confirmez votre réservation.',
+                          premiere: true,
+                        ),
+                        _filet(context),
+                        _question(
+                          context,
+                          question: 'Comment acheter mon billet ?',
+                          reponse:
+                              'Après avoir sélectionné votre trajet et '
+                              'votre siège, procédez au paiement pour '
+                              'recevoir votre billet électronique.',
+                        ),
+                        _filet(context),
+                        _question(
+                          context,
+                          question: 'Où retrouver mes billets ?',
+                          reponse:
+                              'Vos réservations et vos achats sont '
+                              'accessibles depuis l’onglet « Mes voyages ».',
+                        ),
+                        _filet(context),
+                        _question(
+                          context,
+                          question: 'Comment annuler une réservation ?',
+                          reponse:
+                              'Ouvrez « Mes voyages », sélectionnez la '
+                              'réservation concernée puis appuyez sur '
+                              '« Annuler la réservation ».',
+                          derniere: true,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ----------------------------------------------------
+                  // NOUS CONTACTER
+                  // ----------------------------------------------------
+
+                  const TkSectionHeader(titre: 'Nous contacter'),
+
+                  TkCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+
+                        _contact(
+                          context,
+                          icone: Icons.phone_outlined,
+                          titre: 'Téléphone',
+                          sousTitre: 'Contacter le service client',
+                          premiere: true,
+                          onTap: () async {
+                            final uri = Uri(
+                              scheme: 'tel',
+                              path: '+242068216025',
+                            );
+
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            } else {
+                              if (!context.mounted) return;
+                              _showMessage(
+                                context,
+                                'Impossible d’ouvrir le téléphone.',
+                              );
+                            }
+                          },
+                        ),
+
+                        _filet(context),
+
+                        _contact(
+                          context,
+                          icone: Icons.email_outlined,
+                          titre: 'E-mail',
+                          sousTitre: 'Envoyer un message à notre équipe',
+                          onTap: () async {
+                            final uri = Uri(
+                              scheme: 'mailto',
+                              path: 'appassistancetok@gmail.com',
+                              queryParameters: {
+                                'subject': 'Demande d’assistance TOKENDÉ',
+                              },
+                            );
+
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            } else {
+                              if (!context.mounted) return;
+                              _showMessage(
+                                context,
+                                'Impossible d’ouvrir la messagerie.',
+                              );
+                            }
+                          },
+                        ),
+
+                        _filet(context),
+
+                        _contact(
+                          context,
+                          icone: Icons.chat_bubble_outline_rounded,
+                          titre: 'Nous écrire',
+                          sousTitre: 'Discuter avec notre équipe',
+                          derniere: true,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SupportScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 28),
-
-            // ====================================================
-            // QUESTIONS FRÉQUENTES
-            // ====================================================
-
-            _buildSectionTitle(
-              'Questions fréquentes',
-              Icons.help_outline,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildQuestionTile(
-              context,
-              question: 'Comment réserver un voyage ?',
-              answer:
-              'Recherchez votre trajet, choisissez une agence, '
-                  'sélectionnez votre siège puis confirmez votre réservation.',
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildQuestionTile(
-              context,
-              question: 'Comment acheter mon billet ?',
-              answer:
-              'Après avoir sélectionné votre trajet et votre siège, '
-                  'choisissez votre moyen de paiement puis confirmez votre achat.',
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildQuestionTile(
-              context,
-              question: 'Où retrouver mes billets ?',
-              answer:
-              'Vos réservations et vos achats sont accessibles depuis '
-                  'la rubrique « Mes voyages ».',
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildQuestionTile(
-              context,
-              question: 'Comment annuler une réservation ?',
-              answer:
-              'Ouvrez « Mes voyages », sélectionnez la réservation '
-                  'concernée puis utilisez l’option d’annulation lorsqu’elle est disponible.',
-            ),
-
-            const SizedBox(height: 28),
-
-            // ====================================================
-            // CONTACT
-            // ====================================================
-
-            _buildSectionTitle(
-              'Nous contacter',
-              Icons.headset_mic_outlined,
-            ),
-
-            const SizedBox(height: 12),
-
-            _buildContactTile(
-              context,
-              icon: Icons.phone_outlined,
-              title: 'Téléphone',
-              subtitle: 'Contacter le service client',
-              onTap: () async {
-                final uri = Uri(
-                  scheme: 'tel',
-                  path: '+242068216025',
-                );
-
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri);
-                } else {
-                  _showMessage(
-                    context,
-                    'Impossible d’ouvrir le téléphone.',
-                  );
-                }
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildContactTile(
-              context,
-              icon: Icons.email_outlined,
-              title: 'E-mail',
-              subtitle: 'Envoyer un message à notre équipe',
-              onTap: () async {
-                final uri = Uri(
-                  scheme: 'mailto',
-                  path: 'appassistancetok@gmail.com',
-                  queryParameters: {
-                    'subject': 'Demande d’assistance TOKENDÉ',
-                  },
-                );
-
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri);
-                } else {
-                  _showMessage(
-                    context,
-                    'Impossible d’ouvrir l’application e-mail.',
-                  );
-                }
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            _buildContactTile(
-              context,
-              icon: Icons.chat_outlined,
-              title: 'Nous écrire',
-              subtitle: 'Discuter avec notre équipe',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SupportScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 30),
-
-            // ====================================================
-            // INFORMATIONS
-            // ====================================================
-
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3EA),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: orangeColor,
-                    size: 24,
-                  ),
-
-                  SizedBox(width: 12),
-
-                  Expanded(
-                    child: Text(
-                      'Notre équipe est là pour vous accompagner '
-                          'dans vos réservations, vos achats et vos voyages.',
-                      style: TextStyle(
-                        color: primaryColor,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
           ],
         ),
       ),
@@ -494,90 +439,48 @@ class HelpSupportScreen extends StatelessWidget {
       },
     );
   }
-  // ============================================================
-  // TITRE DE SECTION
-  // ============================================================
-
-  Widget _buildSectionTitle(
-      String title,
-      IconData icon,
-      ) {
-    return Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3EA),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Icon(
-            icon,
-            color: orangeColor,
-            size: 23,
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        Text(
-          title,
-          style: const TextStyle(
-            color: primaryColor,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
 
   // ============================================================
-  // QUESTION FAQ
+  // QUESTION DÉPLIABLE
   // ============================================================
 
-  Widget _buildQuestionTile(
-      BuildContext context, {
-        required String question,
-        required String answer,
-      }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+  /// Une question repliée par défaut.
+  ///
+  /// L'ancienne version affichait question et réponse côte à côte, ce qui
+  /// faisait un mur de texte. Replié, on lit les quatre questions d'un coup.
+  Widget _question(
+    BuildContext context, {
+    required String question,
+    required String reponse,
+    bool premiere = false,
+    bool derniere = false,
+  }) {
+    return Theme(
+      // ExpansionTile dessine ses propres filets : on les neutralise pour
+      // garder les séparateurs de la carte.
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
         tilePadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 4,
+          horizontal: AppSpacing.md,
         ),
         childrenPadding: const EdgeInsets.fromLTRB(
-          18,
+          AppSpacing.md,
           0,
-          18,
-          18,
+          AppSpacing.md,
+          AppSpacing.md,
         ),
-        iconColor: orangeColor,
-        collapsedIconColor: Colors.grey,
+        iconColor: AppColors.orange,
+        collapsedIconColor: AppColors.secondaire(context),
         title: Text(
           question,
-          style: const TextStyle(
-            color: primaryColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppText.corpsFort(context).copyWith(fontSize: 15),
         ),
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              answer,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
+            child: Text(reponse, style: AppText.corps(context)),
           ),
         ],
       ),
@@ -585,81 +488,76 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // CONTACT
+  // MOYEN DE CONTACT
   // ============================================================
 
-  Widget _buildContactTile(
-      BuildContext context, {
-        required IconData icon,
-        required String title,
-        required String subtitle,
-        required VoidCallback onTap,
-      }) {
+  Widget _contact(
+    BuildContext context, {
+    required IconData icone,
+    required String titre,
+    required String sousTitre,
+    required VoidCallback onTap,
+    bool premiere = false,
+    bool derniere = false,
+  }) {
+    final rayon = BorderRadius.vertical(
+      top: Radius.circular(premiere ? AppRadius.lg : 0),
+      bottom: Radius.circular(derniere ? AppRadius.lg : 0),
+    );
+
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
+        borderRadius: rayon,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3EA),
-                  borderRadius: BorderRadius.circular(15),
+                  color: AppColors.orangeDoux(context),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: Icon(
-                  icon,
-                  color: orangeColor,
-                  size: 26,
-                ),
+                child: Icon(icone, size: 19, color: AppColors.orange),
               ),
 
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.sm),
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      title,
-                      style: const TextStyle(
-                        color: primaryColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      titre,
+                      style: AppText.corpsFort(context).copyWith(
+                        fontSize: 15,
                       ),
                     ),
-
-                    const SizedBox(height: 4),
-
                     Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
+                      sousTitre,
+                      style: AppText.petit(context).copyWith(fontSize: 13),
                     ),
                   ],
                 ),
               ),
 
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.grey,
-                size: 30,
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.secondaire(context),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _filet(BuildContext context) {
+    return Divider(height: 1, color: AppColors.inactifTheme(context));
   }
 }

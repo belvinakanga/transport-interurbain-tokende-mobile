@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ============================================================
@@ -165,24 +167,10 @@ class _SettingsScreenState
   // MESSAGE
   // ============================================================
 
-  void _showMessage(
-      String message,
-      ) {
+  void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior:
-          SnackBarBehavior.floating,
-          backgroundColor:
-          primaryColor,
-          duration:
-          const Duration(seconds: 2),
-        ),
-      );
+    TkToast.info(context, message);
   }
 
   // ============================================================
@@ -202,267 +190,198 @@ class _SettingsScreenState
   // BUILD
   // ============================================================
 
+  // BUILD
+  // ============================================================
+
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      backgroundColor,
-
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
-
-        foregroundColor:
-        Colors.white,
-
-        elevation: 0,
-
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            size: 30,
-          ),
-
-          onPressed: _goBack,
-        ),
-
-        title: const Text(
-          'Paramètres',
-
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
-      ),
-
-      // ========================================================
-      // CONTENU
-      // ========================================================
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child: ListView(
-          padding:
-          const EdgeInsets.fromLTRB(
-            20,
-            25,
-            20,
-            40,
-          ),
-
+        child: Column(
           children: [
 
-            // ==================================================
-            // NOTIFICATIONS
-            // ==================================================
-
-            _buildSectionTitle(
-              icon:
-              Icons.notifications_none,
-              title:
-              'Notifications',
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildSwitchItem(
-              icon:
-              Icons.notifications_none,
-
-              title:
-              'Notifications',
-
-              subtitle:
-              'Recevoir les notifications de Tokende',
-
-              value:
-              notificationsEnabled,
-
-              onChanged:
-              _changeNotifications,
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildSwitchItem(
-              icon:
-              Icons.confirmation_num_outlined,
-
-              title:
-              'Réservations',
-
-              subtitle:
-              'Recevoir les notifications concernant vos réservations',
-
-              value:
-              reservationsEnabled,
-
-              onChanged:
-              _changeReservations,
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildSwitchItem(
-              icon:
-              Icons.local_offer_outlined,
-
-              title:
-              'Promotions',
-
-              subtitle:
-              'Recevoir les offres et promotions de Tokende',
-
-              value:
-              promotionsEnabled,
-
-              onChanged:
-              _changePromotions,
-            ),
-
-            const SizedBox(height: 35),
-
-            // ==================================================
-            // COMPTE
-            // ==================================================
-
-            _buildSectionTitle(
-              icon:
-              Icons.manage_accounts_outlined,
-
-              title:
-              'Compte',
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildNavigationItem(
-              icon:
-              Icons.lock_outline,
-
-              title:
-              'Modifier le mot de passe',
-
-              subtitle:
-              'Modifier le mot de passe de votre compte',
-
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const ChangePasswordScreen(),
+            // En-tête
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.xs,
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  TkIconButton(
+                    icone: Icons.arrow_back_rounded,
+                    infobulle: 'Retour',
+                    onPressed: _goBack,
                   ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildNavigationItem(
-              icon:
-              Icons.security_outlined,
-
-              title:
-              'Sécurité du compte',
-
-              subtitle:
-              'Gérer la sécurité de votre compte',
-
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const SecurityScreen(),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Paramètres',
+                      style: AppText.sousTitre(context),
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
 
-            const SizedBox(height: 35),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                children: [
 
-            // ==================================================
-            // APPLICATION
-            // ==================================================
+                  // ------------------------------------------------
+                  // NOTIFICATIONS
+                  // ------------------------------------------------
 
-            _buildSectionTitle(
-              icon:
-              Icons.info_outline,
+                  const TkSectionHeader(titre: 'Notifications'),
 
-              title:
-              'Application',
-            ),
-
-            const SizedBox(height: 14),
-
-            _buildNavigationItem(
-              icon:
-              Icons.info_outline,
-
-              title:
-              'À propos de Tokende',
-
-              subtitle:
-              'Informations sur l’application',
-
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const AboutTokendeScreen(),
+                  TkCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _interrupteur(
+                          icone: Icons.notifications_none_rounded,
+                          titre: 'Notifications',
+                          sousTitre:
+                              'Recevoir les notifications de Tokende',
+                          valeur: notificationsEnabled,
+                          onChanged: _changeNotifications,
+                        ),
+                        _filet(),
+                        _interrupteur(
+                          icone: Icons.confirmation_number_outlined,
+                          titre: 'Réservations',
+                          sousTitre:
+                              'Recevoir les notifications concernant vos '
+                              'réservations',
+                          valeur: reservationsEnabled,
+                          onChanged: _changeReservations,
+                        ),
+                        _filet(),
+                        _interrupteur(
+                          icone: Icons.local_offer_outlined,
+                          titre: 'Promotions',
+                          sousTitre:
+                              'Recevoir les offres et promotions de Tokende',
+                          valeur: promotionsEnabled,
+                          onChanged: _changePromotions,
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
 
-            const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.xl),
 
-            _buildNavigationItem(
-              icon:
-              Icons.description_outlined,
+                  // ------------------------------------------------
+                  // COMPTE
+                  // ------------------------------------------------
 
-              title:
-              'Conditions d’utilisation',
+                  const TkSectionHeader(titre: 'Compte'),
 
-              subtitle:
-              'Consulter les conditions d’utilisation',
-
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const TermsScreen(),
+                  TkCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _lien(
+                          icone: Icons.lock_outline_rounded,
+                          titre: 'Modifier le mot de passe',
+                          sousTitre:
+                              'Modifier le mot de passe de votre compte',
+                          premiere: true,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ChangePasswordScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _filet(),
+                        _lien(
+                          icone: Icons.security_outlined,
+                          titre: 'Sécurité du compte',
+                          sousTitre: 'Gérer la sécurité de votre compte',
+                          derniere: true,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SecurityScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
 
-            const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.xl),
 
-            _buildNavigationItem(
-              icon:
-              Icons.privacy_tip_outlined,
+                  // ------------------------------------------------
+                  // APPLICATION
+                  // ------------------------------------------------
 
-              title:
-              'Politique de confidentialité',
+                  const TkSectionHeader(titre: 'Application'),
 
-              subtitle:
-              'Consulter notre politique de confidentialité',
-
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const PrivacyScreen(),
+                  TkCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        _lien(
+                          icone: Icons.info_outline_rounded,
+                          titre: 'À propos de Tokende',
+                          sousTitre: 'Informations sur l’application',
+                          premiere: true,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const AboutTokendeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _filet(),
+                        _lien(
+                          icone: Icons.description_outlined,
+                          titre: 'Conditions d’utilisation',
+                          sousTitre:
+                              'Consulter les conditions d’utilisation',
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const TermsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _filet(),
+                        _lien(
+                          icone: Icons.privacy_tip_outlined,
+                          titre: 'Politique de confidentialité',
+                          sousTitre:
+                              'Consulter la politique de confidentialité',
+                          derniere: true,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PrivacyScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ],
         ),
@@ -471,309 +390,137 @@ class _SettingsScreenState
   }
 
   // ============================================================
-  // TITRE DE SECTION
+  // COMPOSANTS DE LISTE
   // ============================================================
 
-  Widget _buildSectionTitle({
-    required IconData icon,
-    required String title,
+  Widget _interrupteur({
+    required IconData icone,
+    required String titre,
+    required String sousTitre,
+    required bool valeur,
+    required ValueChanged<bool> onChanged,
   }) {
-    return Row(
-      children: [
-
-        Container(
-          width: 62,
-          height: 62,
-
-          decoration:
-          BoxDecoration(
-            color:
-            const Color(0xFFFFF3EA),
-
-            borderRadius:
-            BorderRadius.circular(
-              18,
-            ),
-          ),
-
-          child: Icon(
-            icon,
-            color:
-            orangeColor,
-            size: 30,
-          ),
-        ),
-
-        const SizedBox(width: 18),
-
-        Expanded(
-          child: Text(
-            title,
-
-            style:
-            const TextStyle(
-              color:
-              primaryColor,
-
-              fontSize: 22,
-
-              fontWeight:
-              FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // SWITCH
-  // ============================================================
-
-  Widget _buildSwitchItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool>
-    onChanged,
-  }) {
-    return Container(
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 18,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
-
-      decoration:
-      BoxDecoration(
-        color:
-        Colors.white,
-
-        borderRadius:
-        BorderRadius.circular(
-          24,
-        ),
-      ),
-
       child: Row(
         children: [
+          _pastille(icone),
 
-          Container(
-            width: 58,
-            height: 58,
-
-            decoration:
-            BoxDecoration(
-              color:
-              const Color(
-                0xFFFFF3EA,
-              ),
-
-              borderRadius:
-              BorderRadius.circular(
-                17,
-              ),
-            ),
-
-            child: Icon(
-              icon,
-
-              color:
-              orangeColor,
-
-              size: 30,
-            ),
-          ),
-
-          const SizedBox(width: 20),
+          const SizedBox(width: AppSpacing.sm),
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-              CrossAxisAlignment
-                  .start,
-
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-
                 Text(
-                  title,
-
-                  style:
-                  const TextStyle(
-                    color:
-                    primaryColor,
-
-                    fontSize: 18,
-
-                    fontWeight:
-                    FontWeight.bold,
-                  ),
+                  titre,
+                  style: AppText.corpsFort(context).copyWith(fontSize: 15),
                 ),
-
-                const SizedBox(height: 5),
-
                 Text(
-                  subtitle,
-
-                  style: TextStyle(
-                    color:
-                    Colors.grey
-                        .shade500,
-
-                    fontSize: 14,
-                  ),
+                  sousTitre,
+                  style: AppText.petit(context).copyWith(fontSize: 13),
                 ),
               ],
             ),
           ),
 
+          const SizedBox(width: AppSpacing.xs),
+
           Switch(
-            value:
-            value,
-
-            activeThumbColor:
-            orangeColor,
-
-            activeTrackColor:
-            orangeColor.withValues(
-              alpha: 0.35,
+            value: valeur,
+            onChanged: onChanged,
+            activeThumbColor: Colors.white,
+            activeTrackColor: AppColors.orange,
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: AppColors.inactifTheme(context),
+            trackOutlineColor: WidgetStateProperty.resolveWith(
+              (etats) => etats.contains(WidgetState.selected)
+                  ? AppColors.orange
+                  : AppColors.inactifTheme(context),
             ),
-
-            onChanged:
-            onChanged,
           ),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // ÉLÉMENT AVEC FLÈCHE
-  // ============================================================
-
-  Widget _buildNavigationItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
+  Widget _lien({
+    required IconData icone,
+    required String titre,
+    required String sousTitre,
     required VoidCallback onTap,
+    bool premiere = false,
+    bool derniere = false,
   }) {
+    final rayon = BorderRadius.vertical(
+      top: Radius.circular(premiere ? AppRadius.lg : 0),
+      bottom: Radius.circular(derniere ? AppRadius.lg : 0),
+    );
+
     return Material(
-      color:
-      Colors.transparent,
-
+      type: MaterialType.transparency,
       child: InkWell(
-        borderRadius:
-        BorderRadius.circular(
-          24,
-        ),
-
-        onTap:
-        onTap,
-
-        child: Container(
-          padding:
-          const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 18,
-          ),
-
-          decoration:
-          BoxDecoration(
-            color:
-            Colors.white,
-
-            borderRadius:
-            BorderRadius.circular(
-              24,
-            ),
-          ),
-
+        onTap: onTap,
+        borderRadius: rayon,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
+              _pastille(icone),
 
-              Container(
-                width: 58,
-                height: 58,
-
-                decoration:
-                BoxDecoration(
-                  color:
-                  const Color(
-                    0xFFFFF3EA,
-                  ),
-
-                  borderRadius:
-                  BorderRadius.circular(
-                    17,
-                  ),
-                ),
-
-                child: Icon(
-                  icon,
-
-                  color:
-                  orangeColor,
-
-                  size: 30,
-                ),
-              ),
-
-              const SizedBox(width: 20),
+              const SizedBox(width: AppSpacing.sm),
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment
-                      .start,
-
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-
                     Text(
-                      title,
-
-                      style:
-                      const TextStyle(
-                        color:
-                        primaryColor,
-
-                        fontSize: 18,
-
-                        fontWeight:
-                        FontWeight.bold,
+                      titre,
+                      style: AppText.corpsFort(context).copyWith(
+                        fontSize: 15,
                       ),
                     ),
-
-                    const SizedBox(height: 5),
-
                     Text(
-                      subtitle,
-
-                      style:
-                      TextStyle(
-                        color:
-                        Colors.grey
-                            .shade500,
-
-                        fontSize: 14,
-                      ),
+                      sousTitre,
+                      style: AppText.petit(context).copyWith(fontSize: 13),
                     ),
                   ],
                 ),
               ),
 
               Icon(
-                Icons.chevron_right,
-
-                color:
-                Colors.grey.shade500,
-
-                size: 32,
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.secondaire(context),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _pastille(IconData icone) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.orangeDoux(context),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Icon(icone, size: 19, color: AppColors.orange),
+    );
+  }
+
+  Widget _filet() {
+    return Padding(
+      padding: const EdgeInsets.only(left: 68),
+      child: Divider(height: 1, color: AppColors.inactifTheme(context)),
     );
   }
 }
@@ -874,206 +621,87 @@ class _ChangePasswordScreenState
   void _showMessage(
       String message,
       ) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content:
-          Text(message),
-
-          backgroundColor:
-          primaryColor,
-        ),
-      );
+    TkToast.info(context, message);
   }
+
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      backgroundColor,
+      backgroundColor: AppColors.fond(context),
 
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
+      body: SafeArea(
+        child: Column(
+          children: [
 
-        foregroundColor:
-        Colors.white,
+            _enTetePage(context, 'Modifier le mot de passe'),
 
-        title: const Text(
-          'Modifier le mot de passe',
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                children: [
 
-          style: TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body: ListView(
-        padding:
-        const EdgeInsets.all(20),
-
-        children: [
-
-          _buildPasswordField(
-            controller:
-            currentPasswordController,
-
-            label:
-            'Mot de passe actuel',
-
-            obscureText:
-            hideCurrent,
-
-            onVisibilityChanged:
-                () {
-              setState(() {
-                hideCurrent =
-                !hideCurrent;
-              });
-            },
-          ),
-
-          const SizedBox(height: 18),
-
-          _buildPasswordField(
-            controller:
-            newPasswordController,
-
-            label:
-            'Nouveau mot de passe',
-
-            obscureText:
-            hideNew,
-
-            onVisibilityChanged:
-                () {
-              setState(() {
-                hideNew =
-                !hideNew;
-              });
-            },
-          ),
-
-          const SizedBox(height: 18),
-
-          _buildPasswordField(
-            controller:
-            confirmPasswordController,
-
-            label:
-            'Confirmer le mot de passe',
-
-            obscureText:
-            hideConfirm,
-
-            onVisibilityChanged:
-                () {
-              setState(() {
-                hideConfirm =
-                !hideConfirm;
-              });
-            },
-          ),
-
-          const SizedBox(height: 40),
-
-          SizedBox(
-            height: 58,
-
-            child:
-            ElevatedButton(
-              onPressed:
-              _changePassword,
-
-              style:
-              ElevatedButton.styleFrom(
-                backgroundColor:
-                orangeColor,
-
-                foregroundColor:
-                Colors.white,
-
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(
-                    18,
+                  TkField(
+                    label: 'Mot de passe actuel',
+                    placeholder: 'Votre mot de passe actuel',
+                    controller: currentPasswordController,
+                    motDePasse: true,
+                    motDePasseVisible: !hideCurrent,
+                    onBasculerVisibilite: () {
+                      setState(() {
+                        hideCurrent = !hideCurrent;
+                      });
+                    },
+                    iconeGauche: Icons.lock_outline_rounded,
                   ),
-                ),
-              ),
 
-              child: const Text(
-                'Modifier le mot de passe',
+                  const SizedBox(height: AppSpacing.md),
 
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight:
-                  FontWeight.bold,
-                ),
+                  TkField(
+                    label: 'Nouveau mot de passe',
+                    placeholder: 'Au moins 8 caractères',
+                    controller: newPasswordController,
+                    motDePasse: true,
+                    motDePasseVisible: !hideNew,
+                    onBasculerVisibilite: () {
+                      setState(() {
+                        hideNew = !hideNew;
+                      });
+                    },
+                    iconeGauche: Icons.lock_reset_rounded,
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  TkField(
+                    label: 'Confirmer le mot de passe',
+                    placeholder: 'Retapez le nouveau mot de passe',
+                    controller: confirmPasswordController,
+                    motDePasse: true,
+                    motDePasseVisible: !hideConfirm,
+                    onBasculerVisibilite: () {
+                      setState(() {
+                        hideConfirm = !hideConfirm;
+                      });
+                    },
+                    iconeGauche: Icons.lock_reset_rounded,
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  TkButton(
+                    libelle: 'Modifier le mot de passe',
+                    onPressed: _changePassword,
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPasswordField({
-    required TextEditingController
-    controller,
-
-    required String label,
-
-    required bool obscureText,
-
-    required VoidCallback
-    onVisibilityChanged,
-  }) {
-    return TextField(
-      controller:
-      controller,
-
-      obscureText:
-      obscureText,
-
-      decoration:
-      InputDecoration(
-        labelText:
-        label,
-
-        filled:
-        true,
-
-        fillColor:
-        Colors.white,
-
-        border:
-        OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(
-            20,
-          ),
-
-          borderSide:
-          BorderSide.none,
-        ),
-
-        suffixIcon:
-        IconButton(
-          onPressed:
-          onVisibilityChanged,
-
-          icon: Icon(
-            obscureText
-                ? Icons
-                .visibility_off_outlined
-                : Icons
-                .visibility_outlined,
-          ),
+          ],
         ),
       ),
     );
@@ -1081,83 +709,133 @@ class _ChangePasswordScreenState
 }
 
 // ============================================================
-// PAGE : SÉCURITÉ
+// EN-TÊTE PARTAGÉ DES SOUS-PAGES
 // ============================================================
 
-class SecurityScreen
-    extends StatelessWidget {
-  const SecurityScreen({
-    super.key,
-  });
+/// Barre de titre commune aux pages secondaires des paramètres.
+Widget _enTetePage(BuildContext context, String titre) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.margeEcran,
+      AppSpacing.xs,
+      AppSpacing.margeEcran,
+      AppSpacing.sm,
+    ),
+    child: Row(
+      children: [
+        TkIconButton(
+          icone: Icons.arrow_back_rounded,
+          infobulle: 'Retour',
+          onPressed: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(titre, style: AppText.sousTitre(context)),
+        ),
+      ],
+    ),
+  );
+}
+
+// ============================================================
+// PAGE : SÉCURITÉ DU COMPTE
+// ============================================================
+
+class SecurityScreen extends StatelessWidget {
+  const SecurityScreen({super.key});
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return Scaffold(
-      backgroundColor:
-      backgroundColor,
-
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
-
-        foregroundColor:
-        Colors.white,
-
-        title: const Text(
-          'Sécurité du compte',
-
-          style: TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
+  Widget build(BuildContext context) {
+    final points = <(IconData, String, String)>[
+      (
+        Icons.verified_user_outlined,
+        'Votre compte est protégé',
+        'Vos informations personnelles sont protégées et accessibles '
+            'uniquement depuis votre compte.',
       ),
+      (
+        Icons.lock_outline_rounded,
+        'Mot de passe',
+        'Utilisez un mot de passe suffisamment sécurisé et évitez de le '
+            'partager.',
+      ),
+      (
+        Icons.logout_rounded,
+        'Déconnexion',
+        'Pensez à vous déconnecter lorsque vous utilisez Tokende sur un '
+            'appareil partagé.',
+      ),
+    ];
 
-      body: ListView(
-        padding:
-        const EdgeInsets.all(20),
+    return Scaffold(
+      backgroundColor: AppColors.fond(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _enTetePage(context, 'Sécurité du compte'),
 
-        children: [
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                itemCount: points.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final (icone, titre, texte) = points[index];
 
-          _infoCard(
-            icon:
-            Icons.lock_outline,
+                  return TkCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.orangeDoux(context),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Icon(
+                            icone,
+                            size: 19,
+                            color: AppColors.orange,
+                          ),
+                        ),
 
-            title:
-            'Votre compte est protégé',
+                        const SizedBox(width: AppSpacing.sm),
 
-            text:
-            'Vos informations personnelles sont protégées et accessibles uniquement depuis votre compte.',
-          ),
-
-          const SizedBox(height: 18),
-
-          _infoCard(
-            icon:
-            Icons.password_outlined,
-
-            title:
-            'Mot de passe',
-
-            text:
-            'Utilisez un mot de passe suffisamment sécurisé et évitez de le partager.',
-          ),
-
-          const SizedBox(height: 18),
-
-          _infoCard(
-            icon:
-            Icons.logout,
-
-            title:
-            'Déconnexion',
-
-            text:
-            'Pensez à vous déconnecter lorsque vous utilisez Tokende sur un appareil partagé.',
-          ),
-        ],
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                titre,
+                                style: AppText.corpsFort(context)
+                                    .copyWith(fontSize: 15),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                texte,
+                                style: AppText.petit(context)
+                                    .copyWith(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1167,136 +845,113 @@ class SecurityScreen
 // PAGE : À PROPOS
 // ============================================================
 
-class AboutTokendeScreen
-    extends StatelessWidget {
-  const AboutTokendeScreen({
-    super.key,
-  });
+class AboutTokendeScreen extends StatelessWidget {
+  const AboutTokendeScreen({super.key});
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      backgroundColor,
+      backgroundColor: AppColors.fond(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _enTetePage(context, 'À propos de Tokende'),
 
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                children: [
 
-        foregroundColor:
-        Colors.white,
+                  Center(
+                    child: Column(
+                      children: [
+                        // Le vrai logo plutôt qu'une icône générique :
+                        // c'est la page qui présente l'application.
+                        Image.asset(
+                          'assets/images/transparent-logo.png',
+                          width: 150,
+                          height: 98,
+                          fit: BoxFit.contain,
+                        ),
 
-        title: const Text(
-          'À propos de Tokende',
+                        const SizedBox(height: AppSpacing.md),
 
-          style: TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
+                        Text('Tokende', style: AppText.titre(context)),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          'Transport interurbain',
+                          style: AppText.corps(context),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxl),
+
+                  TkCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Notre application',
+                          style: AppText.corpsFort(context)
+                              .copyWith(fontSize: 15),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          'Tokende facilite la recherche, la réservation et '
+                          'l’achat de trajets interurbains.',
+                          style: AppText.corps(context),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  TkCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Text('Version', style: AppText.label(context)),
+                        const Spacer(),
+                        Text(
+                          '1.0.0',
+                          style: AppText.corpsFort(context)
+                              .copyWith(fontSize: 15),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ),
-
-      body: ListView(
-        padding:
-        const EdgeInsets.all(20),
-
-        children: [
-
-          const SizedBox(height: 20),
-
-          const Icon(
-            Icons.directions_bus_outlined,
-
-            color:
-            primaryColor,
-
-            size: 80,
-          ),
-
-          const SizedBox(height: 20),
-
-          const Center(
-            child: Text(
-              'Tokende',
-
-              style: TextStyle(
-                color:
-                primaryColor,
-
-                fontSize: 30,
-
-                fontWeight:
-                FontWeight.bold,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          const Center(
-            child: Text(
-              'Transport interurbain',
-
-              style: TextStyle(
-                color:
-                Colors.grey,
-
-                fontSize: 16,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 35),
-
-          _infoCard(
-            icon:
-            Icons.info_outline,
-
-            title:
-            'Notre application',
-
-            text:
-            'Tokende facilite la recherche, la réservation et l’achat de trajets interurbains.',
-          ),
-
-          const SizedBox(height: 18),
-
-          _infoCard(
-            icon:
-            Icons.verified_outlined,
-
-            title:
-            'Version',
-
-            text:
-            'Version 1.0.0',
-          ),
-        ],
       ),
     );
   }
 }
 
 // ============================================================
-// PAGE : CONDITIONS
+// PAGE : CONDITIONS D'UTILISATION
 // ============================================================
 
-class TermsScreen
-    extends StatelessWidget {
-  const TermsScreen({
-    super.key,
-  });
+class TermsScreen extends StatelessWidget {
+  const TermsScreen({super.key});
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return _LegalPage(
-      title:
-      'Conditions d’utilisation',
-
+  Widget build(BuildContext context) {
+    return const _LegalPage(
+      title: 'Conditions d’utilisation',
       content: '''
 En utilisant Tokende, vous acceptez les présentes conditions d’utilisation.
 
@@ -1316,20 +971,13 @@ Les conditions propres à chaque agence de transport peuvent également s’appl
 // PAGE : CONFIDENTIALITÉ
 // ============================================================
 
-class PrivacyScreen
-    extends StatelessWidget {
-  const PrivacyScreen({
-    super.key,
-  });
+class PrivacyScreen extends StatelessWidget {
+  const PrivacyScreen({super.key});
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    return _LegalPage(
-      title:
-      'Politique de confidentialité',
-
+  Widget build(BuildContext context) {
+    return const _LegalPage(
+      title: 'Politique de confidentialité',
       content: '''
 Tokende accorde une grande importance à la protection de vos données personnelles.
 
@@ -1344,11 +992,10 @@ Vous pouvez demander la modification de vos informations personnelles depuis vot
 }
 
 // ============================================================
-// PAGE JURIDIQUE
+// GABARIT DES PAGES LÉGALES
 // ============================================================
 
-class _LegalPage
-    extends StatelessWidget {
+class _LegalPage extends StatelessWidget {
   const _LegalPage({
     required this.title,
     required this.content,
@@ -1358,155 +1005,43 @@ class _LegalPage
   final String content;
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
+    // Le texte est découpé en paragraphes pour pouvoir les espacer :
+    // un bloc unique de huit lignes est illisible sur mobile.
+    final paragraphes = content
+        .trim()
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
     return Scaffold(
-      backgroundColor:
-      backgroundColor,
+      backgroundColor: AppColors.fond(context),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _enTetePage(context, title),
 
-      appBar: AppBar(
-        backgroundColor:
-        primaryColor,
-
-        foregroundColor:
-        Colors.white,
-
-        title: Text(
-          title,
-
-          style: const TextStyle(
-            fontWeight:
-            FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body:
-      SingleChildScrollView(
-        padding:
-        const EdgeInsets.all(24),
-
-        child: Text(
-          content,
-
-          style:
-          const TextStyle(
-            color:
-            primaryColor,
-
-            fontSize: 16,
-
-            height: 1.7,
-          ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.xxl,
+                ),
+                itemCount: paragraphes.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.md),
+                itemBuilder: (context, index) => Text(
+                  paragraphes[index],
+                  style: AppText.corps(context),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-// ============================================================
-// CARTE INFORMATION
-// ============================================================
-
-Widget _infoCard({
-  required IconData icon,
-  required String title,
-  required String text,
-}) {
-  return Container(
-    padding:
-    const EdgeInsets.all(22),
-
-    decoration:
-    BoxDecoration(
-      color:
-      Colors.white,
-
-      borderRadius:
-      BorderRadius.circular(
-        24,
-      ),
-    ),
-
-    child: Row(
-      crossAxisAlignment:
-      CrossAxisAlignment.start,
-
-      children: [
-
-        Container(
-          width: 54,
-          height: 54,
-
-          decoration:
-          BoxDecoration(
-            color:
-            const Color(
-              0xFFFFF3EA,
-            ),
-
-            borderRadius:
-            BorderRadius.circular(
-              16,
-            ),
-          ),
-
-          child: Icon(
-            icon,
-
-            color:
-            orangeColor,
-
-            size: 28,
-          ),
-        ),
-
-        const SizedBox(width: 18),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment
-                .start,
-
-            children: [
-
-              Text(
-                title,
-
-                style:
-                const TextStyle(
-                  color:
-                  primaryColor,
-
-                  fontSize: 18,
-
-                  fontWeight:
-                  FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                text,
-
-                style:
-                TextStyle(
-                  color:
-                  Colors.grey
-                      .shade600,
-
-                  fontSize: 15,
-
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
 }

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../widgets/tk/tk.dart';
 import '../auth/login_screen.dart';
 import 'onboarding_model.dart';
 import 'onboarding_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
+
+  /// Clé mémorisant que l'utilisateur a déjà parcouru l'onboarding.
+  static const String cleOnboardingVu = 'onboarding_vu';
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -14,65 +19,65 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
 
-  int currentPage = 0;
+  int pageCourante = 0;
 
-  final List<OnboardingModel> pages = [
+  static const List<OnboardingModel> pages = [
     OnboardingModel(
-      image: 'assets/images/onboarding/trajet.jpg',
-      title: 'Trouvez votre trajet',
+      icone: Icons.travel_explore_rounded,
+      titre: 'Trouvez votre trajet',
       description:
-      'Recherchez facilement les meilleures agences et les trajets disponibles partout au Congo.',
+          'Recherchez facilement les meilleures agences et les trajets '
+          'disponibles partout au Congo.',
     ),
     OnboardingModel(
-      image: 'assets/images/onboarding/reservation.jpg',
-      title: 'Réservez et achetez',
+      icone: Icons.confirmation_number_rounded,
+      titre: 'Réservez et achetez',
       description:
-      'Choisissez votre siège, payez en toute sécurité et recevez votre billet électronique instantanément.',
+          'Choisissez votre siège, payez en toute sécurité et recevez votre '
+          'billet électronique instantanément.',
     ),
     OnboardingModel(
-      image: 'assets/images/onboarding/voyage.jpg',
-      title: 'Voyagez en toute confiance',
+      icone: Icons.verified_rounded,
+      titre: 'Voyagez en confiance',
       description:
-      'Présentez votre billet électronique et profitez d’un voyage simple, rapide et sécurisé.',
+          'Présentez votre billet électronique et profitez d’un voyage '
+          'simple, rapide et sécurisé.',
     ),
   ];
 
-  // Passer à la page suivante
-  void nextPage() {
-    if (currentPage < pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      // Sur la dernière page :
-      // aller vers la connexion
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginScreen(),
-        ),
-      );
-    }
-  }
+  bool get estDerniserePage => pageCourante == pages.length - 1;
 
-  // Revenir à la page précédente
-  void previousPage() {
-    if (currentPage > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
+  /// Mémorise que l'onboarding a été vu, puis ouvre la connexion.
+  Future<void> _terminer() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(OnboardingScreen.cleOnboardingVu, true);
 
-  // Ignorer l'onboarding et aller directement à la connexion
-  void skip() {
+    if (!mounted) return;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => const LoginScreen(),
       ),
+    );
+  }
+
+  void _pageSuivante() {
+    if (estDerniserePage) {
+      _terminer();
+      return;
+    }
+
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _pagePrecedente() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -85,185 +90,109 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
         child: Column(
           children: [
-            // =========================
-            // INDICATEUR / IGNORER
-            // =========================
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 28,
-                right: 20,
-                top: 10,
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    'Page ${currentPage + 1}/${pages.length}',
-                    style: const TextStyle(
-                      color: Color(0xFF0A2A66),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
 
-                  const Spacer(),
+            // ----------------------------------------------------------------
+            // BARRE HAUTE : retour discret + Ignorer
+            // ----------------------------------------------------------------
+            SizedBox(
+              height: 62,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                ),
+                child: Row(
+                  children: [
 
-                  TextButton(
-                    onPressed: skip,
-                    child: const Text(
-                      'Ignorer',
-                      style: TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    // Flèche retour : occupe sa place même page 1, pour que
+                    // le bouton Ignorer ne se déplace pas d'une page à l'autre.
+                    AnimatedOpacity(
+                      opacity: pageCourante == 0 ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: TkIconButton(
+                        icone: Icons.arrow_back_rounded,
+                        onPressed:
+                            pageCourante == 0 ? null : _pagePrecedente,
+                        infobulle: 'Précédent',
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
 
-            // =========================
-            // BARRE DE PROGRESSION
-            // =========================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: (currentPage + 1) / pages.length,
-                  minHeight: 6,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    Color(0xFFFF6B00),
-                  ),
+                    const Spacer(),
+
+                    TkButton(
+                      libelle: 'Ignorer',
+                      onPressed: _terminer,
+                      variante: TkButtonVariante.tonal,
+                      pleineLargeur: false,
+                    ),
+                  ],
                 ),
               ),
             ),
 
-            // =========================
-            // PAGES ONBOARDING
-            // =========================
+            // ----------------------------------------------------------------
+            // PAGES
+            // ----------------------------------------------------------------
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: pages.length,
                 onPageChanged: (index) {
-                  setState(() {
-                    currentPage = index;
-                  });
+                  setState(() => pageCourante = index);
                 },
                 itemBuilder: (context, index) {
-                  return OnboardingPage(
-                    data: pages[index],
-                  );
+                  return OnboardingPage(data: pages[index]);
                 },
               ),
             ),
 
-            // =========================
-            // INDICATEURS
-            // =========================
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                pages.length,
-                    (index) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 5),
-                    width: currentPage == index ? 28 : 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: currentPage == index
-                          ? const Color(0xFFFF6B00)
-                          : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // =========================
-            // BOUTONS
-            // =========================
+            // ----------------------------------------------------------------
+            // BAS : points + bouton unique
+            // ----------------------------------------------------------------
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Row(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                0,
+                AppSpacing.xl,
+                AppSpacing.xl,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // PRÉCÉDENT
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed:
-                      currentPage == 0 ? null : previousPage,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(
-                          double.infinity,
-                          58,
+
+                  Row(
+                    children: List.generate(pages.length, (index) {
+                      final actif = pageCourante == index;
+
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                        margin: const EdgeInsets.only(right: AppSpacing.xxs + 2),
+                        width: actif ? 24 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: actif
+                              ? AppColors.orange
+                              : AppColors.inactifTheme(context),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        side: BorderSide(
-                          color: currentPage == 0
-                              ? Colors.grey.shade300
-                              : const Color(0xFF0A2A66),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        'Précédent',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: currentPage == 0
-                              ? Colors.grey
-                              : const Color(0xFF0A2A66),
-                        ),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
 
-                  const SizedBox(width: 20),
+                  const SizedBox(height: AppSpacing.xl),
 
-                  // SUIVANT / COMMENCER
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF6B00),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(
-                          double.infinity,
-                          58,
-                        ),
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Text(
-                        currentPage == pages.length - 1
-                            ? 'Commencer'
-                            : 'Suivant',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                  TkButton(
+                    libelle: estDerniserePage ? 'Commencer' : 'Suivant',
+                    onPressed: _pageSuivante,
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 25),
           ],
         ),
       ),

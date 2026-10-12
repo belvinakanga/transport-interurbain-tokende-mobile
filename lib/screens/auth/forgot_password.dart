@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/app_logo.dart';
-import '../../widgets/custom_button.dart';
-import '../../widgets/custom_textfield.dart';
+import '../../services/password_reset_service.dart';
+import '../../widgets/tk/tk.dart';
+import 'reset_password_screen.dart';
 
-import 'otp_screen.dart';
-
+/// Étape 1 de la récupération : l'utilisateur saisit son adresse e-mail et
+/// reçoit un code à 6 chiffres.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -14,162 +14,184 @@ class ForgotPasswordScreen extends StatefulWidget {
       _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState
-    extends State<ForgotPasswordScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _service = PasswordResetService();
 
-  final TextEditingController phoneController =
-  TextEditingController();
+  bool _envoiEnCours = false;
+  String? _erreur;
 
   @override
   void dispose() {
-    phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  void sendCode() {
-    if (_formKey.currentState!.validate()) {
-      final String phoneNumber = phoneController.text.trim();
+  Future<void> _envoyerCode() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _envoiEnCours = true;
+      _erreur = null;
+    });
+
+    final email = _emailController.text.trim();
+
+    try {
+      final validite = await _service.demanderCode(email);
+
+      if (!mounted) return;
 
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => OtpScreen(
-            phoneNumber: phoneNumber,
+          builder: (_) => ResetPasswordScreen(
+            email: email,
+            validiteMinutes: validite,
           ),
         ),
       );
+    } on PasswordResetException catch (e) {
+      if (!mounted) return;
+      setState(() => _erreur = e.message);
+    } finally {
+      if (mounted) setState(() => _envoiEnCours = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
-
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Color(0xFF0A2A66),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 28,
-              vertical: 20,
-            ),
-            child: Form(
-              key: _formKey,
+        child: Column(
+          children: [
 
-              child: Column(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.xs,
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
+              ),
+              child: Row(
                 children: [
-                  const SizedBox(height: 15),
-
-                  // ==============================
-                  // LOGO
-                  // ==============================
-                  const AppLogo(
-                    size: 110,
+                  TkIconButton(
+                    icone: Icons.arrow_back_rounded,
+                    infobulle: 'Retour',
+                    onPressed: () => Navigator.pop(context),
                   ),
-
-                  const SizedBox(height: 25),
-
-                  // ==============================
-                  // TITRE
-                  // ==============================
-                  const Text(
-                    "Mot de passe oublié ?",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0A2A66),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Mot de passe oublié',
+                      style: AppText.sousTitre(context),
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // ==============================
-                  // DESCRIPTION
-                  // ==============================
-                  const Text(
-                    "Entrez votre numéro de téléphone. "
-                        "Nous vous enverrons un code de vérification.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: Color(0xFF666666),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // ==============================
-                  // NUMÉRO DE TÉLÉPHONE
-                  // ==============================
-                  CustomTextField(
-                    controller: phoneController,
-                    hintText: "Numéro de téléphone",
-                    prefixIcon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null ||
-                          value.trim().isEmpty) {
-                        return "Veuillez saisir votre numéro de téléphone.";
-                      }
-
-                      if (value.trim().length < 8) {
-                        return "Veuillez saisir un numéro valide.";
-                      }
-
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // ==============================
-                  // ENVOYER LE CODE
-                  // ==============================
-                  CustomButton(
-                    text: "Envoyer le code",
-                    onPressed: sendCode,
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // ==============================
-                  // RETOUR CONNEXION
-                  // ==============================
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      "Retour à la connexion",
-                      style: TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
-          ),
+
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.margeEcran,
+                    AppSpacing.xs,
+                    AppSpacing.margeEcran,
+                    AppSpacing.xxl,
+                  ),
+                  children: [
+
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: AppColors.orangeDoux(context),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.lock_reset_rounded,
+                        size: 30,
+                        color: AppColors.orange,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.lg),
+
+                    Text(
+                      'Récupérez votre compte',
+                      style: AppText.titre(context),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xxs),
+
+                    Text(
+                      'Indiquez l’adresse e-mail de votre compte. Nous vous '
+                      'enverrons un code de vérification à 6 chiffres.',
+                      style: AppText.corps(context),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    TkField(
+                      label: 'Adresse e-mail',
+                      placeholder: 'vous@exemple.com',
+                      controller: _emailController,
+                      clavier: TextInputType.emailAddress,
+                      iconeGauche: Icons.mail_outline_rounded,
+                      messageErreur: _erreur,
+                      validateur: (valeur) {
+                        if (valeur == null || valeur.trim().isEmpty) {
+                          return 'Veuillez entrer votre adresse e-mail.';
+                        }
+                        if (!valeur.contains('@')) {
+                          return 'Cette adresse e-mail n’est pas valide.';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    TkButton(
+                      libelle: 'Envoyer le code',
+                      icone: Icons.send_rounded,
+                      onPressed: _envoiEnCours ? null : _envoyerCode,
+                      enChargement: _envoiEnCours,
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Dit pourquoi la réponse est la même dans tous les cas,
+                    // sinon l'utilisateur croit que l'envoi a échoué.
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          size: 15,
+                          color: AppColors.secondaire(context),
+                        ),
+                        const SizedBox(width: AppSpacing.xxs),
+                        Expanded(
+                          child: Text(
+                            'Par sécurité, le même message s’affiche que '
+                            'l’adresse existe ou non.',
+                            style: AppText.petit(context)
+                                .copyWith(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

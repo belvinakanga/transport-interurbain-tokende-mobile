@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -386,26 +388,11 @@ class _SeatSelectionScreenState
       }
 
       else {
-        ScaffoldMessenger.of(
+        TkToast.attente(
           context,
-        ).showSnackBar(
-
-          SnackBar(
-
-            content: Text(
-
-              widget.travelers == 1
-                  ? 'Vous devez choisir 1 siège.'
-                  : 'Vous devez choisir '
-                  '${widget.travelers} sièges.',
-
-            ),
-
-            backgroundColor:
-            primaryColor,
-
-          ),
-
+          widget.travelers == 1
+              ? 'Vous devez choisir 1 siège.'
+              : 'Vous devez choisir ${widget.travelers} sièges.',
         );
       }
     });
@@ -419,26 +406,11 @@ class _SeatSelectionScreenState
   void continueToPassengerInformation() {
     if (selectedSeats.length !=
         widget.travelers) {
-      ScaffoldMessenger.of(
+      TkToast.attente(
         context,
-      ).showSnackBar(
-
-        SnackBar(
-
-          content: Text(
-
-            widget.travelers == 1
-                ? 'Veuillez sélectionner 1 siège.'
-                : 'Veuillez sélectionner '
-                '${widget.travelers} sièges.',
-
-          ),
-
-          backgroundColor:
-          primaryColor,
-
-        ),
-
+        widget.travelers == 1
+            ? 'Veuillez sélectionner 1 siège.'
+            : 'Veuillez sélectionner ${widget.travelers} sièges.',
       );
 
       return;
@@ -510,1360 +482,417 @@ class _SeatSelectionScreenState
   // ============================================================
 
   @override
-  Widget build(BuildContext context,) {
+  Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.fond(context),
 
-      backgroundColor:
-      backgroundColor,
-
-
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
-      appBar: AppBar(
-
-        backgroundColor:
-        primaryColor,
-
-        foregroundColor:
-        Colors.white,
-
-        elevation: 0,
-
-        title: const Text(
-
-          'Choix du siège',
-
-          style: TextStyle(
-
-            fontWeight:
-            FontWeight.bold,
-
-          ),
-
-        ),
-
-      ),
-
-
-      // ========================================================
-      // CONTENU
-      // ========================================================
-
-      body: Column(
-
-        children: [
-
-          // ======================================================
-          // INFORMATIONS TRAJET
-          // ======================================================
-
-          Container(
-
-            width:
-            double.infinity,
-
-            padding:
-            const EdgeInsets.all(20),
-
-            color:
-            primaryColor,
-
-            child: Column(
-
-              children: [
-
-                Text(
-
-                  widget.agency,
-
-                  textAlign:
-                  TextAlign.center,
-
-                  style:
-                  const TextStyle(
-
-                    color:
-                    Colors.white,
-
-                    fontSize:
-                    20,
-
-                    fontWeight:
-                    FontWeight.bold,
-
-                  ),
-
-                ),
-
-
-                const SizedBox(
-                  height: 8,
-                ),
-
-
-                // DATE
-
-                Row(
-
-                  mainAxisAlignment:
-                  MainAxisAlignment.center,
-
-                  children: [
-
-                    const Icon(
-
-                      Icons.calendar_today_outlined,
-
-                      color:
-                      Colors.white70,
-
-                      size:
-                      15,
-
-                    ),
-
-
-                    const SizedBox(
-                      width: 6,
-                    ),
-
-
-                    Text(
-
-                      widget.departureDate,
-
-                      style:
-                      const TextStyle(
-
-                        color:
-                        Colors.white70,
-
-                        fontSize:
-                        13,
-
-                        fontWeight:
-                        FontWeight.w600,
-
-                      ),
-
-                    ),
-
-                  ],
-
-                ),
-
-
-                const SizedBox(
-                  height: 10,
-                ),
-
-
-                // TRAJET
-
-                Row(
-
-                  mainAxisAlignment:
-                  MainAxisAlignment.center,
-
-                  children: [
-
-                    Flexible(
-
-                      child: Text(
-
-                        widget.departure,
-
-                        textAlign:
-                        TextAlign.center,
-
-                        style:
-                        const TextStyle(
-
-                          color:
-                          Colors.white,
-
-                          fontSize:
-                          15,
-
-                          fontWeight:
-                          FontWeight.w600,
-
-                        ),
-
-                      ),
-
-                    ),
-
-
-                    const Padding(
-
-                      padding:
-                      EdgeInsets.symmetric(
-                        horizontal: 12,
-                      ),
-
-                      child: Icon(
-
-                        Icons.arrow_forward,
-
-                        color:
-                        Colors.white70,
-
-                        size:
-                        18,
-
-                      ),
-
-                    ),
-
-
-                    Flexible(
-
-                      child: Text(
-
-                        widget.destination,
-
-                        textAlign:
-                        TextAlign.center,
-
-                        style:
-                        const TextStyle(
-
-                          color:
-                          Colors.white,
-
-                          fontSize:
-                          15,
-
-                          fontWeight:
-                          FontWeight.w600,
-
-                        ),
-
-                      ),
-
-                    ),
-
-                  ],
-
-                ),
-
-
-                const SizedBox(
-                  height: 8,
-                ),
-
-
-                Text(
-
-                  '${widget.departureTime} - '
-                      '${widget.arrivalTime}',
-
-                  style:
-                  const TextStyle(
-
-                    color:
-                    Colors.white70,
-
-                    fontSize:
-                    14,
-
-                  ),
-
-                ),
-
-              ],
-
-            ),
-
-          ),
-
-
-          // ======================================================
-          // CONTENU PRINCIPAL
-          // ======================================================
-
-          Expanded(
-
-            child:
-
-            isLoading
-
-                ? _buildLoading()
-
-                : errorMessage != null
-
-                ? _buildError()
-
-                : _buildSeatContent(),
-
-          ),
-
-
-          // ======================================================
-          // BOUTON CONTINUER
-          // ======================================================
-
-          if (
-          !isLoading &&
-              errorMessage == null
-          )
-
-            _buildContinueButton(),
-
-        ],
-
-      ),
-
-    );
-  }
-
-
-  // ============================================================
-  // CHARGEMENT
-  // ============================================================
-
-  Widget _buildLoading() {
-    return const Center(
-
-      child: Column(
-
-        mainAxisAlignment:
-        MainAxisAlignment.center,
-
-        children: [
-
-          CircularProgressIndicator(
-
-            color:
-            orangeColor,
-
-          ),
-
-
-          SizedBox(
-            height: 15,
-          ),
-
-
-          Text(
-
-            'Chargement des sièges...',
-
-            style:
-            TextStyle(
-
-              color:
-              Colors.grey,
-
-              fontSize:
-              14,
-
-            ),
-
-          ),
-
-        ],
-
-      ),
-
-    );
-  }
-
-
-  // ============================================================
-  // ERREUR
-  // ============================================================
-
-  Widget _buildError() {
-    return Center(
-
-      child: Padding(
-
-        padding:
-        const EdgeInsets.all(25),
-
+      body: SafeArea(
         child: Column(
-
-          mainAxisAlignment:
-          MainAxisAlignment.center,
-
           children: [
 
-            const Icon(
+            _enTete(),
 
-              Icons.error_outline,
-
-              color:
-              Colors.redAccent,
-
-              size:
-              55,
-
+            Expanded(
+              child: isLoading
+                  ? _chargement()
+                  : errorMessage != null
+                      ? _etatErreur()
+                      : _contenuSieges(),
             ),
 
-
-            const SizedBox(
-              height: 15,
-            ),
-
-
-            const Text(
-
-              'Impossible de charger les sièges',
-
-              textAlign:
-              TextAlign.center,
-
-              style:
-              TextStyle(
-
-                color:
-                primaryColor,
-
-                fontSize:
-                18,
-
-                fontWeight:
-                FontWeight.bold,
-
-              ),
-
-            ),
-
-
-            const SizedBox(
-              height: 10,
-            ),
-
-
-            Text(
-
-              errorMessage ?? '',
-
-              textAlign:
-              TextAlign.center,
-
-              style:
-              const TextStyle(
-
-                color:
-                Colors.grey,
-
-                fontSize:
-                13,
-
-              ),
-
-            ),
-
-
-            const SizedBox(
-              height: 20,
-            ),
-
-
-            ElevatedButton.icon(
-
-              onPressed:
-              loadSeats,
-
-              icon:
-              const Icon(
-                Icons.refresh,
-              ),
-
-              label:
-              const Text(
-                'Réessayer',
-              ),
-
-              style:
-              ElevatedButton.styleFrom(
-
-                backgroundColor:
-                orangeColor,
-
-                foregroundColor:
-                Colors.white,
-
-              ),
-
-            ),
-
+            if (!isLoading && errorMessage == null) _barreAction(),
           ],
-
         ),
-
       ),
-
     );
   }
 
-
   // ============================================================
-  // CONTENU SIÈGES
+  // EN-TÊTE
   // ============================================================
 
-  Widget _buildSeatContent() {
-    return SingleChildScrollView(
-
-      padding:
-      const EdgeInsets.all(20),
-
-      child: Column(
-
+  Widget _enTete() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+      ),
+      child: Row(
         children: [
-
-          const Text(
-
-            'Choisissez votre siège',
-
-            style:
-            TextStyle(
-
-              color:
-              primaryColor,
-
-              fontSize:
-              22,
-
-              fontWeight:
-              FontWeight.bold,
-
-            ),
-
+          TkIconButton(
+            icone: Icons.arrow_back_rounded,
+            infobulle: 'Retour',
+            onPressed: () => Navigator.pop(context),
           ),
 
+          const SizedBox(width: AppSpacing.sm),
 
-          const SizedBox(
-            height: 8,
-          ),
-
-
-          Text(
-
-            widget.travelers == 1
-
-                ? 'Sélectionnez 1 siège'
-
-                : 'Sélectionnez '
-                '${widget.travelers} sièges',
-
-            style:
-            const TextStyle(
-
-              color:
-              Colors.grey,
-
-              fontSize:
-              14,
-
-            ),
-
-          ),
-
-
-          const SizedBox(
-            height: 10,
-          ),
-
-
-          Text(
-
-            '$placesDisponibles siège(s) disponible(s) '
-                'sur $placesTotales',
-
-            style:
-            const TextStyle(
-
-              color:
-              primaryColor,
-
-              fontSize:
-              13,
-
-              fontWeight:
-              FontWeight.w600,
-
-            ),
-
-          ),
-
-
-          const SizedBox(
-            height: 25,
-          ),
-
-
-          // ======================================================
-          // LÉGENDE
-          // ======================================================
-
-          Wrap(
-
-            alignment:
-            WrapAlignment.center,
-
-            spacing:
-            15,
-
-            runSpacing:
-            8,
-
-            children: [
-
-              _buildLegend(
-
-                color:
-                Colors.white,
-
-                borderColor:
-                primaryColor,
-
-                label:
-                'Disponible',
-
-              ),
-
-
-              _buildLegend(
-
-                color:
-                orangeColor,
-
-                borderColor:
-                orangeColor,
-
-                label:
-                'Sélectionné',
-
-              ),
-
-
-              _buildLegend(
-
-                color:
-                Colors.grey.shade300,
-
-                borderColor:
-                Colors.grey.shade300,
-
-                label:
-                'Occupé',
-
-              ),
-
-            ],
-
-          ),
-
-
-          const SizedBox(
-            height: 30,
-          ),
-
-
-          // ======================================================
-          // BUS
-          // ======================================================
-
-          Container(
-
-            padding:
-            const EdgeInsets.all(20),
-
-            decoration:
-            BoxDecoration(
-
-              color:
-              Colors.white,
-
-              borderRadius:
-              BorderRadius.circular(25),
-
-              boxShadow: [
-
-                BoxShadow(
-
-                  color:
-                  Colors.black
-                      .withOpacity(0.06),
-
-                  blurRadius:
-                  15,
-
-                  offset:
-                  const Offset(
-                    0,
-                    5,
-                  ),
-
-                ),
-
-              ],
-
-            ),
-
+          Expanded(
             child: Column(
-
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-
-                // =================================================
-                // CONDUCTEUR
-                // =================================================
-
-                Container(
-
-                  width:
-                  double.infinity,
-
-                  padding:
-                  const EdgeInsets.symmetric(
-                    vertical: 12,
-                  ),
-
-                  decoration:
-                  BoxDecoration(
-
-                    color:
-                    const Color(
-                      0xFFF1F3F7,
-                    ),
-
-                    borderRadius:
-                    BorderRadius.circular(
-                      12,
-                    ),
-
-                  ),
-
-                  child:
-                  const Row(
-
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
-
-                    children: [
-
-                      Icon(
-
-                        Icons
-                            .airline_seat_recline_normal,
-
-                        color:
-                        primaryColor,
-
-                      ),
-
-
-                      SizedBox(
-                        width: 8,
-                      ),
-
-
-                      Text(
-
-                        'Conducteur',
-
-                        style:
-                        TextStyle(
-
-                          color:
-                          primaryColor,
-
-                          fontWeight:
-                          FontWeight.bold,
-
-                        ),
-
-                      ),
-
-                    ],
-
-                  ),
-
+                Text(
+                  'Choisissez votre siège',
+                  style: AppText.sousTitre(context),
                 ),
-
-
-                const SizedBox(
-                  height: 25,
+                Text(
+                  '${widget.departure} → ${widget.destination}',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.petit(context).copyWith(fontSize: 13),
                 ),
-
-
-                // =================================================
-                // SIÈGES
-                // =================================================
-
-                GridView.builder(
-
-                  shrinkWrap:
-                  true,
-
-                  physics:
-                  const NeverScrollableScrollPhysics(),
-
-                  itemCount:
-                  seats.length,
-
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-
-                    crossAxisCount:
-                    4,
-
-                    crossAxisSpacing:
-                    12,
-
-                    mainAxisSpacing:
-                    14,
-
-                    childAspectRatio:
-                    1,
-
-                  ),
-
-                  itemBuilder:
-                      (context, index) {
-                    final seat =
-                    seats[index];
-
-
-                    final seatNumber =
-                        int.tryParse(
-                          seat[
-                          'numero_siege'
-                          ].toString(),
-                        ) ??
-                            0;
-
-
-                    final isSelected =
-                    selectedSeats
-                        .contains(
-                      seatNumber,
-                    );
-
-
-                    final isUnavailable =
-                        seat['statut'] !=
-                            'disponible';
-
-
-                    return _buildSeat(
-
-                      seatNumber,
-
-                      isSelected,
-
-                      isUnavailable,
-
-                    );
-                  },
-
-                ),
-
               ],
-
             ),
-
           ),
-
-
-          const SizedBox(
-            height: 25,
-          ),
-
-
-          // ======================================================
-          // RÉSUMÉ
-          // ======================================================
-
-          Container(
-
-            width:
-            double.infinity,
-
-            padding:
-            const EdgeInsets.all(18),
-
-            decoration:
-            BoxDecoration(
-
-              color:
-              Colors.white,
-
-              borderRadius:
-              BorderRadius.circular(
-                18,
-              ),
-
-            ),
-
-            child:
-            Row(
-
-              children: [
-
-                const Icon(
-
-                  Icons.event_seat_outlined,
-
-                  color:
-                  orangeColor,
-
-                  size:
-                  28,
-
-                ),
-
-
-                const SizedBox(
-                  width: 12,
-                ),
-
-
-                Expanded(
-
-                  child:
-                  Column(
-
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
-                    children: [
-
-                      const Text(
-
-                        'Sièges sélectionnés',
-
-                        style:
-                        TextStyle(
-
-                          color:
-                          Colors.grey,
-
-                          fontSize:
-                          13,
-
-                        ),
-
-                      ),
-
-
-                      const SizedBox(
-                        height: 4,
-                      ),
-
-
-                      Text(
-
-                        selectedSeats.isEmpty
-
-                            ? 'Aucun siège'
-
-                            : (selectedSeats.toList()
-                          ..sort())
-                            .map(
-                              (seat) =>
-                          'Siège $seat',
-                        )
-                            .join(', '),
-
-                        style:
-                        const TextStyle(
-
-                          color:
-                          primaryColor,
-
-                          fontWeight:
-                          FontWeight.bold,
-
-                        ),
-
-                      ),
-
-                    ],
-
-                  ),
-
-                ),
-
-              ],
-
-            ),
-
-          ),
-
-
-          const SizedBox(
-            height: 20,
-          ),
-
         ],
-
       ),
-
     );
   }
 
-
-  // ============================================================
-  // BOUTON CONTINUER
-  // ============================================================
-
-  Widget _buildContinueButton() {
-    final canContinue =
-        selectedSeats.length ==
-            widget.travelers;
-
-
-    return Container(
-
-      padding:
-      const EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        20,
-      ),
-
-      decoration:
-      BoxDecoration(
-
-        color:
-        Colors.white,
-
-        boxShadow: [
-
-          BoxShadow(
-
-            color:
-            Colors.black
-                .withOpacity(0.08),
-
-            blurRadius:
-            12,
-
-            offset:
-            const Offset(
-              0,
-              -3,
-            ),
-
-          ),
-
-        ],
-
-      ),
-
-      child:
-      SizedBox(
-
-        width:
-        double.infinity,
-
-        height:
-        55,
-
-        child:
-        ElevatedButton.icon(
-
-          onPressed:
-          canContinue
-              ? continueToPassengerInformation
-              : null,
-
-          icon:
-          const Icon(
-            Icons.arrow_forward,
-          ),
-
-          label:
-          const Text(
-
-            'Continuer',
-
-            style:
-            TextStyle(
-
-              fontSize:
-              17,
-
-              fontWeight:
-              FontWeight.bold,
-
-            ),
-
-          ),
-
-          style:
-          ElevatedButton.styleFrom(
-
-            backgroundColor:
-            orangeColor,
-
-            disabledBackgroundColor:
-            Colors.grey.shade300,
-
-            foregroundColor:
-            Colors.white,
-
-            disabledForegroundColor:
-            Colors.grey.shade600,
-
-            shape:
-            RoundedRectangleBorder(
-
-              borderRadius:
-              BorderRadius.circular(
-                16,
-              ),
-
-            ),
-
-          ),
-
+  Widget _chargement() {
+    return const Center(
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.4,
+          color: AppColors.orange,
         ),
-
       ),
-
     );
   }
 
-
-  // ============================================================
-  // SIÈGE
-  // ============================================================
-
-  Widget _buildSeat(int seatNumber,
-
-      bool isSelected,
-
-      bool isUnavailable,) {
-    Color backgroundColor;
-
-
-    if (isUnavailable) {
-      backgroundColor =
-          Colors.grey.shade300;
-    }
-
-    else if (isSelected) {
-      backgroundColor =
-          orangeColor;
-    }
-
-    else {
-      backgroundColor =
-          Colors.white;
-    }
-
-
-    return GestureDetector(
-
-      onTap:
-      isUnavailable
-          ? null
-          : () =>
-          toggleSeat(
-            seatNumber,
-          ),
-
-      child:
-      Container(
-
-        decoration:
-        BoxDecoration(
-
-          color:
-          backgroundColor,
-
-          borderRadius:
-          BorderRadius.circular(
-            12,
-          ),
-
-          border:
-          Border.all(
-
-            color:
-
-            isUnavailable
-
-                ? Colors.grey.shade300
-
-                : isSelected
-
-                ? orangeColor
-
-                : primaryColor,
-
-            width:
-            1.5,
-
-          ),
-
+  Widget _etatErreur() {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        TkEmptyState(
+          icone: Icons.event_seat_outlined,
+          titre: 'Plan des sièges indisponible',
+          message: errorMessage ?? 'Une erreur est survenue.',
+          libelleAction: 'Réessayer',
+          onAction: loadSeats,
         ),
-
-        child:
-        Center(
-
-          child:
-          Column(
-
-            mainAxisAlignment:
-            MainAxisAlignment.center,
-
-            children: [
-
-              Icon(
-
-                Icons.event_seat,
-
-                size:
-                23,
-
-                color:
-
-                isUnavailable
-
-                    ? Colors.grey
-
-                    : isSelected
-
-                    ? Colors.white
-
-                    : primaryColor,
-
-              ),
-
-
-              const SizedBox(
-                height: 2,
-              ),
-
-
-              Text(
-
-                '$seatNumber',
-
-                style:
-                TextStyle(
-
-                  color:
-
-                  isUnavailable
-
-                      ? Colors.grey
-
-                      : isSelected
-
-                      ? Colors.white
-
-                      : primaryColor,
-
-                  fontWeight:
-                  FontWeight.bold,
-
-                  fontSize:
-                  12,
-
-                ),
-
-              ),
-
-            ],
-
-          ),
-
-        ),
-
-      ),
-
+      ],
     );
   }
 
+  // ============================================================
+  // CONTENU
+  // ============================================================
+
+  Widget _contenuSieges() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.lg,
+      ),
+      children: [
+
+        // Consigne et disponibilité réunies en une ligne.
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.travelers == 1
+                    ? 'Sélectionnez 1 siège'
+                    : 'Sélectionnez ${widget.travelers} sièges',
+                style: AppText.corpsFort(context).copyWith(fontSize: 15),
+              ),
+            ),
+            TkChip(
+              libelle: '$placesDisponibles / $placesTotales libres',
+              ton: placesDisponibles > 0
+                  ? TkChipTon.succes
+                  : TkChipTon.echec,
+            ),
+          ],
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        _legende(),
+
+        const SizedBox(height: AppSpacing.md),
+
+        _plan(),
+
+        const SizedBox(height: AppSpacing.md),
+
+        _recapSelection(),
+      ],
+    );
+  }
 
   // ============================================================
   // LÉGENDE
   // ============================================================
 
-  Widget _buildLegend({
-
-    required Color color,
-
-    required Color borderColor,
-
-    required String label,
-
-  }) {
-    return Row(
-
-      mainAxisSize:
-      MainAxisSize.min,
-
+  Widget _legende() {
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.xs,
       children: [
-
-        Container(
-
-          width:
-          18,
-
-          height:
-          18,
-
-          decoration:
-          BoxDecoration(
-
-            color:
-            color,
-
-            borderRadius:
-            BorderRadius.circular(
-              5,
-            ),
-
-            border:
-            Border.all(
-
-              color:
-              borderColor,
-
-            ),
-
-          ),
-
-        ),
-
-
-        const SizedBox(
-          width: 5,
-        ),
-
-
-        Text(
-
-          label,
-
-          style:
-          const TextStyle(
-
-            fontSize:
-            11,
-
-            color:
-            Colors.grey,
-
-          ),
-
-        ),
-
+        _pointLegende('Disponible', null),
+        _pointLegende('Sélectionné', AppColors.orange),
+        _pointLegende('Occupé', AppColors.inactifTheme(context)),
       ],
+    );
+  }
 
+  Widget _pointLegende(String libelle, Color? couleur) {
+    final sombre = Theme.of(context).brightness == Brightness.dark;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: couleur ?? (sombre ? AppColors.fondSombre : Colors.white),
+            borderRadius: BorderRadius.circular(4),
+            border: couleur == null
+                ? Border.all(color: AppColors.inactifTheme(context))
+                : null,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          libelle,
+          style: AppText.petit(context).copyWith(fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // PLAN DU BUS
+  // ============================================================
+
+  Widget _plan() {
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        children: [
+
+          // Repère du conducteur : sans lui, le plan n'a pas de sens
+          // de lecture et on ne sait pas où est l'avant du bus.
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.inactifTheme(context),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.airline_seat_recline_normal_rounded,
+                      size: 14,
+                      color: AppColors.secondaire(context),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Conducteur',
+                      style: AppText.petit(context).copyWith(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: seats.length,
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: AppSpacing.sm,
+              mainAxisSpacing: AppSpacing.sm,
+              childAspectRatio: 1,
+            ),
+            itemBuilder: (context, index) {
+              final seat = seats[index];
+
+              final seatNumber =
+                  int.tryParse(seat['numero_siege'].toString()) ?? 0;
+
+              final isSelected = selectedSeats.contains(seatNumber);
+              final isUnavailable = seat['statut'] != 'disponible';
+
+              return _siege(seatNumber, isSelected, isUnavailable);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _siege(int numero, bool selectionne, bool indisponible) {
+    final sombre = Theme.of(context).brightness == Brightness.dark;
+
+    final Color fond;
+    final Color encre;
+    final Color bordure;
+
+    if (indisponible) {
+      fond = AppColors.inactifTheme(context);
+      encre = AppColors.secondaire(context);
+      bordure = AppColors.inactifTheme(context);
+    } else if (selectionne) {
+      fond = AppColors.orange;
+      encre = Colors.white;
+      bordure = AppColors.orange;
+    } else {
+      fond = sombre ? AppColors.fondSombre : Colors.white;
+      encre = AppColors.titre(context);
+      bordure = AppColors.inactifTheme(context);
+    }
+
+    return Material(
+      color: fond,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: InkWell(
+        onTap: indisponible ? null : () => toggleSeat(numero),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(
+              color: bordure,
+              width: selectionne ? 1.6 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                indisponible
+                    ? Icons.close_rounded
+                    : Icons.event_seat_rounded,
+                size: 17,
+                color: encre,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$numero',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: encre,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // RÉCAPITULATIF
+  // ============================================================
+
+  Widget _recapSelection() {
+    final liste = selectedSeats.toList()..sort();
+
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Text('Sièges choisis', style: AppText.label(context)),
+
+          const SizedBox(width: AppSpacing.sm),
+
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: liste.isEmpty
+                  ? Text(
+                      'Aucun siège',
+                      style: AppText.corps(context).copyWith(fontSize: 14),
+                    )
+                  : Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: [
+                        for (final s in liste)
+                          TkChip(
+                            libelle: '$s',
+                            ton: TkChipTon.accent,
+                          ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // BARRE D'ACTION
+  // ============================================================
+
+  Widget _barreAction() {
+    final complet = selectedSeats.length == widget.travelers;
+
+    final manquants = widget.travelers - selectedSeats.length;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+        AppSpacing.margeEcran,
+        AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.fond(context),
+        border: Border(
+          top: BorderSide(color: AppColors.inactifTheme(context)),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+
+          // Dit ce qu'il manque, plutôt que de désactiver le bouton
+          // sans explication.
+          if (!complet)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Text(
+                manquants > 0
+                    ? 'Encore $manquants siège${manquants > 1 ? 's' : ''} '
+                        'à choisir'
+                    : 'Vous avez choisi trop de sièges',
+                style: AppText.petit(context).copyWith(fontSize: 13),
+              ),
+            ),
+
+          TkButton(
+            libelle: 'Continuer',
+            icone: Icons.arrow_forward_rounded,
+            onPressed: complet ? continueToPassengerInformation : null,
+          ),
+        ],
+      ),
     );
   }
 }
-

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -606,25 +608,12 @@ class _AvisScreenState extends State<AvisScreen> {
   // ============================================================
 
   void _showMessage(
-      String message, {
-        bool isError = false,
-      }) {
+    String message, {
+    bool isError = false,
+  }) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor:
-          isError ? Colors.red : primaryColor,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 
   // ============================================================
@@ -684,179 +673,97 @@ class _AvisScreenState extends State<AvisScreen> {
   // CONSTRUIRE LES ÉTOILES
   // ============================================================
 
-  Widget _buildStars(dynamic note) {
+  // ============================================================
+  // ÉTOILES
+  // ============================================================
+
+  Widget _etoiles(dynamic note, {double taille = 15}) {
     int rating = 0;
 
     if (note is int) {
       rating = note;
     } else {
-      rating = int.tryParse(
-        note?.toString() ?? '',
-      ) ??
-          0;
+      rating = int.tryParse(note?.toString() ?? '') ?? 0;
     }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        5,
-            (index) {
-          return Icon(
-            index < rating
-                ? Icons.star_rounded
-                : Icons.star_border_rounded,
-            color: orangeColor,
-            size: 20,
-          );
-        },
-      ),
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating ? Icons.star_rounded : Icons.star_border_rounded,
+          color: AppColors.orange,
+          size: taille,
+        );
+      }),
     );
   }
 
   // ============================================================
-  // CARTE AVIS
+  // CARTE D'AVIS
   // ============================================================
 
-  Widget _buildAvisCard(
-      Map<String, dynamic> avis,
-      ) {
+  Widget _carteAvis(Map<String, dynamic> avis) {
     final note = avis['note'];
+    final commentaire = avis['commentaire']?.toString() ?? '';
+    final date = _formatDate(avis['created_at']);
+    final nom = _userName(avis);
 
-    final commentaire =
-        avis['commentaire']?.toString() ?? '';
-
-    final date =
-    _formatDate(avis['created_at']);
-
-    return Container(
-      margin: const EdgeInsets.only(
-        bottom: 14,
-      ),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-        BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFE8EBF0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-            Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              // ------------------------------------------------
-              // AVATAR
-              // ------------------------------------------------
 
+          Row(
+            children: [
+              // Initiale plutôt qu'une icône générique : deux avis
+              // voisins se distinguent au premier coup d'œil.
               Container(
-                width: 46,
-                height: 46,
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(
-                    alpha: 0.10,
-                  ),
+                  color: AppColors.orangeDoux(context),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.person_rounded,
-                  color: primaryColor,
-                  size: 25,
+                child: Text(
+                  nom.isEmpty ? '?' : nom.characters.first.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.orange,
+                  ),
                 ),
               ),
 
-              const SizedBox(width: 12),
-
-              // ------------------------------------------------
-              // NOM + DATE
-              // ------------------------------------------------
+              const SizedBox(width: AppSpacing.sm),
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _userName(avis),
-                      style: const TextStyle(
-                        color: primaryColor,
-                        fontWeight:
-                        FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                      nom,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.corpsFort(context)
+                          .copyWith(fontSize: 15),
                     ),
-                    if (date.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        date,
-                        style:
-                        const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    Text(
+                      date,
+                      style: AppText.petit(context).copyWith(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
 
-              // ------------------------------------------------
-              // NOTE
-              // ------------------------------------------------
-
-              Container(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                  orangeColor.withValues(
-                    alpha: 0.10,
-                  ),
-                  borderRadius:
-                  BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${note ?? '-'} / 5',
-                  style: const TextStyle(
-                    color: orangeColor,
-                    fontWeight:
-                    FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
+              _etoiles(note),
             ],
           ),
 
-          const SizedBox(height: 10),
-
-          _buildStars(note),
-
           if (commentaire.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              commentaire,
-              style: const TextStyle(
-                color: Color(0xFF555555),
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(commentaire, style: AppText.corps(context)),
           ],
         ],
       ),
@@ -870,296 +777,166 @@ class _AvisScreenState extends State<AvisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppColors.fond(context),
 
-      // ========================================================
-      // APP BAR
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor: primaryColor,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAddAvisDialog,
+        backgroundColor: AppColors.orange,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          'Avis',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        highlightElevation: 0,
+        icon: const Icon(Icons.rate_review_outlined, size: 19),
+        label: const Text('Donner un avis', style: AppText.bouton),
       ),
 
-      // ========================================================
-      // BOUTON AJOUTER
-      // ========================================================
-
-      floatingActionButton:
-      FloatingActionButton.extended(
-        onPressed: _openAddAvisDialog,
-        backgroundColor: orangeColor,
-        foregroundColor: Colors.white,
-        icon: const Icon(
-          Icons.rate_review_outlined,
-        ),
-        label: const Text(
-          'Donner un avis',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      // ========================================================
-      // BODY
-      // ========================================================
-
-      body: RefreshIndicator(
-        color: orangeColor,
-        onRefresh: _loadAvis,
-        child: _loading
-            ? const Center(
-          child: CircularProgressIndicator(
-            color: orangeColor,
-          ),
-        )
-            : _error != null
-            ? ListView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.all(24),
+      body: SafeArea(
+        child: Column(
           children: [
-            const SizedBox(height: 100),
-            Icon(
-              Icons.error_outline_rounded,
-              size: 60,
-              color: Colors.red.shade400,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Impossible de charger les avis',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: primaryColor,
-                fontWeight:
-                FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
-                onPressed: _loadAvis,
-                style:
-                ElevatedButton.styleFrom(
-                  backgroundColor:
-                  primaryColor,
-                  foregroundColor:
-                  Colors.white,
-                ),
-                child:
-                const Text('Réessayer'),
-              ),
-            ),
-          ],
-        )
-            : _avis.isEmpty
-            ? ListView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.all(24),
-          children: [
-            const SizedBox(height: 90),
 
-            Container(
-              width: 100,
-              height: 100,
-              decoration:
-              BoxDecoration(
-                color:
-                orangeColor.withValues(
-                  alpha: 0.10,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.star_border_rounded,
-                color: orangeColor,
-                size: 55,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            const Text(
-              'Aucun avis pour le moment',
-              textAlign:
-              TextAlign.center,
-              style: TextStyle(
-                color: primaryColor,
-                fontWeight:
-                FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            const Text(
-              'Soyez la première personne à partager votre expérience avec InterGO Congo.',
-              textAlign:
-              TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            ElevatedButton.icon(
-              onPressed:
-              _openAddAvisDialog,
-              icon: const Icon(
-                Icons.star_rounded,
-              ),
-              label: const Text(
-                'Donner mon avis',
-              ),
-              style:
-              ElevatedButton.styleFrom(
-                backgroundColor:
-                orangeColor,
-                foregroundColor:
-                Colors.white,
-                padding:
-                const EdgeInsets
-                    .symmetric(
-                  horizontal: 24,
-                  vertical: 15,
-                ),
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(
-                    14,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        )
-            : ListView(
-          physics:
-          const AlwaysScrollableScrollPhysics(),
-          padding:
-          const EdgeInsets.fromLTRB(
-            18,
-            18,
-            18,
-            100,
-          ),
-          children: [
-            // ------------------------------------------------
-            // HEADER
-            // ------------------------------------------------
-
-            Container(
-              padding:
-              const EdgeInsets.all(
-                20,
-              ),
-              decoration:
-              BoxDecoration(
-                color: primaryColor,
-                borderRadius:
-                BorderRadius.circular(
-                  20,
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.xs,
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 55,
-                    height: 55,
-                    decoration:
-                    BoxDecoration(
-                      color: Colors.white
-                          .withValues(
-                        alpha: 0.12,
-                      ),
-                      shape:
-                      BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.star_rounded,
-                      color:
-                      orangeColor,
-                      size: 32,
-                    ),
+                  TkIconButton(
+                    icone: Icons.arrow_back_rounded,
+                    infobulle: 'Retour',
+                    onPressed: () => Navigator.pop(context),
                   ),
-
-                  const SizedBox(
-                    width: 14,
-                  ),
-
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                      children: [
-                        const Text(
-                          'Avis des voyageurs',
-                          style:
-                          TextStyle(
-                            color:
-                            Colors.white,
-                            fontSize: 18,
-                            fontWeight:
-                            FontWeight
-                                .bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 4,
-                        ),
-                        Text(
-                          '${_avis.length} avis',
-                          style:
-                          TextStyle(
-                            color: Colors
-                                .white
-                                .withValues(
-                              alpha: 0.75,
-                            ),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Avis des voyageurs',
+                      style: AppText.sousTitre(context),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.orange,
+                onRefresh: _loadAvis,
+                child: _contenu(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // ------------------------------------------------
-            // LISTE
-            // ------------------------------------------------
+  Widget _contenu() {
+    if (_loading) {
+      return const Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: AppColors.orange,
+          ),
+        ),
+      );
+    }
 
-            ..._avis.map(
-              _buildAvisCard,
+    if (_error != null) {
+      return ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          TkEmptyState(
+            icone: Icons.wifi_off_rounded,
+            titre: 'Impossible de charger les avis',
+            message: _error!,
+            libelleAction: 'Réessayer',
+            onAction: _loadAvis,
+          ),
+        ],
+      );
+    }
+
+    if (_avis.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          TkEmptyState(
+            icone: Icons.rate_review_outlined,
+            titre: 'Aucun avis pour le moment',
+            message: 'Soyez la première personne à partager votre '
+                'expérience de voyage avec Tokende.',
+            libelleAction: 'Donner mon avis',
+            onAction: _openAddAvisDialog,
+          ),
+        ],
+      );
+    }
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        // Laisse la place au bouton flottant.
+        96,
+      ),
+      itemCount: _avis.length + 1,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, index) {
+        if (index == 0) return _resume();
+        return _carteAvis(_avis[index - 1]);
+      },
+    );
+  }
+
+  /// Note moyenne et nombre d'avis, en tête de liste.
+  Widget _resume() {
+    final notes = _avis
+        .map((a) => int.tryParse(a['note']?.toString() ?? '') ?? 0)
+        .where((n) => n > 0)
+        .toList();
+
+    final moyenne = notes.isEmpty
+        ? 0.0
+        : notes.reduce((a, b) => a + b) / notes.length;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: TkCard(
+        accentuee: true,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Text(
+              moyenne == 0 ? '—' : moyenne.toStringAsFixed(1),
+              style: AppText.display(context).copyWith(
+                fontSize: 38,
+                color: AppColors.orange,
+              ),
+            ),
+
+            const SizedBox(width: AppSpacing.md),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _etoiles(moyenne.round(), taille: 17),
+                  const SizedBox(height: 2),
+                  Text(
+                    _avis.length > 1
+                        ? '${_avis.length} avis de voyageurs'
+                        : '1 avis de voyageur',
+                    style: AppText.petit(context).copyWith(fontSize: 13),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -374,113 +376,12 @@ class _PersonalInformationScreenState
   // ============================================================
 
   void _showMessage(
-      String message, {
-        bool isError = false,
-      }) {
+    String message, {
+    bool isError = false,
+  }) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor:
-        isError ? Colors.red.shade700 : primaryColor,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
-  // ============================================================
-  // CHAMP DE TEXTE
-  // ============================================================
-
-  Widget _buildField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: primaryColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-
-        const SizedBox(height: 9),
-
-        TextField(
-          controller: controller,
-          enabled: _isEditing && !_isSaving,
-          keyboardType: keyboardType,
-          style: const TextStyle(
-            color: primaryColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: Colors.grey.shade500,
-            ),
-
-            prefixIcon: Icon(
-              icon,
-              color: _isEditing
-                  ? orangeColor
-                  : Colors.grey.shade600,
-            ),
-
-            filled: true,
-
-            fillColor: _isEditing
-                ? Colors.white
-                : Colors.grey.shade100,
-
-            contentPadding:
-            const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 17,
-            ),
-
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: Colors.grey.shade200,
-              ),
-            ),
-
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: orangeColor,
-                width: 1.5,
-              ),
-            ),
-
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: Colors.grey.shade200,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 
   // ============================================================
@@ -490,77 +391,80 @@ class _PersonalInformationScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-
-      // ========================================================
-      // BARRE DU HAUT
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            size: 30,
-          ),
-          onPressed: () {
-            if (_isEditing) {
-              _cancelEditing();
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-
-        title: const Text(
-          'Informations personnelles',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        actions: [
-          if (!_isLoading && !_isEditing)
-            IconButton(
-              tooltip: 'Modifier',
-              icon: const Icon(
-                Icons.edit_outlined,
-                size: 27,
-              ),
-              onPressed: _startEditing,
-            ),
-
-          if (_isEditing)
-            IconButton(
-              tooltip: 'Annuler',
-              icon: const Icon(
-                Icons.close,
-                size: 30,
-              ),
-              onPressed:
-              _isSaving ? null : _cancelEditing,
-            ),
-        ],
-      ),
-
-      // ========================================================
-      // CONTENU
-      // ========================================================
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
-          child: CircularProgressIndicator(
-            color: orangeColor,
+        child: Column(
+          children: [
+
+            _enTete(),
+
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: SizedBox(
+                        width: 26,
+                        height: 26,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: AppColors.orange,
+                        ),
+                      ),
+                    )
+                  : _errorMessage != null
+                      ? _etatErreur()
+                      : _contenu(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // EN-TÊTE
+  // ============================================================
+
+  Widget _enTete() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          TkIconButton(
+            icone: _isEditing
+                ? Icons.close_rounded
+                : Icons.arrow_back_rounded,
+            infobulle: _isEditing ? 'Annuler' : 'Retour',
+            onPressed: () {
+              if (_isEditing) {
+                _cancelEditing();
+              } else {
+                Navigator.pop(context);
+              }
+            },
           ),
-        )
-            : _errorMessage != null
-            ? _buildErrorState()
-            : _buildContent(),
+
+          const SizedBox(width: AppSpacing.sm),
+
+          Expanded(
+            child: Text(
+              'Mes informations',
+              style: AppText.sousTitre(context),
+            ),
+          ),
+
+          if (!_isLoading && !_isEditing)
+            TkIconButton(
+              icone: Icons.edit_outlined,
+              infobulle: 'Modifier',
+              onPressed: _startEditing,
+            ),
+        ],
       ),
     );
   }
@@ -569,207 +473,75 @@ class _PersonalInformationScreenState
   // CONTENU
   // ============================================================
 
-  Widget _buildContent() {
+  Widget _contenu() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        20,
-        30,
-        20,
-        35,
+        AppSpacing.margeEcran,
+        AppSpacing.xs,
+        AppSpacing.margeEcran,
+        AppSpacing.xxl,
       ),
       children: [
-        // ======================================================
-        // PHOTO / AVATAR
-        // ======================================================
 
-        Center(
-          child: Stack(
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: const BoxDecoration(
-                  color: primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 62,
-                ),
-              ),
+        Center(child: _avatar()),
 
-              if (_isEditing)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: const BoxDecoration(
-                      color: orangeColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_outlined,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        const SizedBox(height: AppSpacing.xl),
+
+        TkField(
+          label: 'Nom complet',
+          placeholder: 'Votre nom complet',
+          controller: _nameController,
+          iconeGauche: Icons.person_outline_rounded,
         ),
 
-        const SizedBox(height: 35),
+        const SizedBox(height: AppSpacing.md),
 
-        // ======================================================
-        // INFORMATIONS
-        // ======================================================
-
-        Container(
-          padding: const EdgeInsets.all(25),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: Column(
-            children: [
-              // ------------------------------------------------
-              // NOM COMPLET
-              // ------------------------------------------------
-
-              _buildField(
-                label: 'Nom complet',
-                hint: 'Votre nom complet',
-                controller: _nameController,
-                icon: Icons.person_outline,
-              ),
-
-              const SizedBox(height: 24),
-
-              // ------------------------------------------------
-              // E-MAIL
-              // ------------------------------------------------
-
-              _buildField(
-                label: 'Adresse e-mail',
-                hint: 'Votre adresse e-mail',
-                controller: _emailController,
-                icon: Icons.email_outlined,
-                keyboardType:
-                TextInputType.emailAddress,
-              ),
-            ],
-          ),
+        TkField(
+          label: 'Adresse e-mail',
+          placeholder: 'Votre adresse e-mail',
+          controller: _emailController,
+          clavier: TextInputType.emailAddress,
+          iconeGauche: Icons.mail_outline_rounded,
         ),
-
-        // ======================================================
-        // BOUTONS DE MODIFICATION
-        // ======================================================
 
         if (_isEditing) ...[
-          const SizedBox(height: 22),
+          const SizedBox(height: AppSpacing.xl),
 
-          SizedBox(
-            width: double.infinity,
-            height: 58,
-            child: ElevatedButton(
-              onPressed:
-              _isSaving ? null : _saveInformation,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: orangeColor,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor:
-                Colors.grey.shade400,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(17),
-                ),
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                width: 25,
-                height: 25,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: Colors.white,
-                ),
-              )
-                  : const Text(
-                'Enregistrer les modifications',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          TkButton(
+            libelle: 'Enregistrer les modifications',
+            onPressed: _isSaving ? null : _saveInformation,
+            enChargement: _isSaving,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.xs),
 
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: OutlinedButton(
-              onPressed:
-              _isSaving ? null : _cancelEditing,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryColor,
-                side: const BorderSide(
-                  color: primaryColor,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(17),
-                ),
-              ),
-              child: const Text(
-                'Annuler',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          TkButton(
+            libelle: 'Annuler',
+            onPressed: _isSaving ? null : _cancelEditing,
+            variante: TkButtonVariante.tonal,
           ),
         ],
 
-        const SizedBox(height: 25),
+        const SizedBox(height: AppSpacing.xl),
 
-        // ======================================================
-        // INFORMATION
-        // ======================================================
-
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3E8),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: const Row(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
+        // Note explicative : en carte atténuée plutôt qu'en texte gris
+        // perdu en bas de page.
+        TkCard(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                Icons.info_outline,
-                color: orangeColor,
-                size: 25,
+                Icons.info_outline_rounded,
+                size: 17,
+                color: AppColors.secondaire(context),
               ),
-
-              SizedBox(width: 12),
-
+              const SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
-                  'Ces informations sont utilisées pour '
-                      'faciliter vos réservations et vos achats '
-                      'sur Tokende.',
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontSize: 14,
-                    height: 1.45,
-                  ),
+                  'Ces informations sont utilisées pour vos réservations '
+                  'et pour vous contacter en cas de besoin.',
+                  style: AppText.petit(context).copyWith(fontSize: 13),
                 ),
               ),
             ],
@@ -779,84 +551,66 @@ class _PersonalInformationScreenState
     );
   }
 
-  // ============================================================
-  // ÉTAT ERREUR
-  // ============================================================
+  /// Avatar : pastille orange, cohérente avec le reste de l'application.
+  Widget _avatar() {
+    return Stack(
+      children: [
+        Container(
+          width: 104,
+          height: 104,
+          decoration: const BoxDecoration(
+            color: AppColors.orange,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.person_rounded,
+            color: Colors.white,
+            size: 50,
+          ),
+        ),
 
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30),
-        child: Column(
-          mainAxisAlignment:
-          MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
+        if (_isEditing)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEEEE),
-                borderRadius:
-                BorderRadius.circular(25),
+                color: AppColors.bleuNuit,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.fond(context),
+                  width: 2.5,
+                ),
               ),
               child: const Icon(
-                Icons.cloud_off_outlined,
-                color: Colors.red,
-                size: 40,
+                Icons.camera_alt_rounded,
+                color: Colors.white,
+                size: 15,
               ),
             ),
+          ),
+      ],
+    );
+  }
 
-            const SizedBox(height: 20),
+  // ============================================================
+  // ÉTAT D'ERREUR
+  // ============================================================
 
-            const Text(
-              'Impossible de récupérer vos informations',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: primaryColor,
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              _errorMessage ??
-                  'Une erreur est survenue.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _loadUserInformation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: orangeColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Réessayer',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
+  Widget _etatErreur() {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        TkEmptyState(
+          icone: Icons.wifi_off_rounded,
+          titre: 'Impossible de récupérer vos informations',
+          message: _errorMessage ?? 'Une erreur est survenue.',
+          libelleAction: 'Réessayer',
+          onAction: _loadUserInformation,
         ),
-      ),
+      ],
     );
   }
 

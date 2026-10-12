@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -176,195 +178,222 @@ class BookingSummaryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: AppColors.fond(context),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0A2A66),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Récapitulatif',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-
+      body: SafeArea(
         child: Column(
           children: [
-            const Icon(
-              Icons.receipt_long_outlined,
-              color: Color(0xFFFF6B00),
-              size: 55,
-            ),
 
-            const SizedBox(height: 12),
-
-            const Text(
-              'Vérifiez votre voyage',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF0A2A66),
-                fontSize: 23,
-                fontWeight: FontWeight.bold,
+            // En-tête
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.xs,
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
               ),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              'Vérifiez les informations avant de choisir '
-                  'entre la réservation et l’achat.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // ==================================================
-            // TRAJET
-            // ==================================================
-
-            _buildCard(
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  const Text(
-                    'Trajet',
-                    style: TextStyle(
-                      color: Color(0xFF0A2A66),
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
+                  TkIconButton(
+                    icone: Icons.arrow_back_rounded,
+                    infobulle: 'Retour',
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Récapitulatif',
+                      style: AppText.sousTitre(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.margeEcran,
+                  AppSpacing.xs,
+                  AppSpacing.margeEcran,
+                  AppSpacing.lg,
+                ),
+                children: [
+
+                  Text(
+                    'Vérifiez votre voyage',
+                    style: AppText.titre(context),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xxs),
+
+                  Text(
+                    'Vérifiez les informations avant de choisir votre '
+                    'mode de paiement.',
+                    style: AppText.corps(context),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ----------------------------------------------
+                  // TRAJET
+                  // ----------------------------------------------
+
+                  const TkSectionHeader(titre: 'Trajet'),
+
+                  TkCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          agency,
+                          style: AppText.corpsFort(context)
+                              .copyWith(fontSize: 15),
+                        ),
+
+                        const SizedBox(height: AppSpacing.md),
+
+                        _etape(
+                          context,
+                          heure: departureTime,
+                          ville: departure,
+                          icone: Icons.trip_origin_rounded,
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.only(left: 7),
+                          child: Container(
+                            width: 2,
+                            height: 22,
+                            color: AppColors.inactifTheme(context),
+                          ),
+                        ),
+
+                        _etape(
+                          context,
+                          heure: arrivalTime,
+                          ville: destination,
+                          icone: Icons.place_rounded,
+                        ),
+
+                        const SizedBox(height: AppSpacing.md),
+
+                        Divider(
+                          height: 1,
+                          color: AppColors.inactifTheme(context),
+                        ),
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.event_rounded,
+                              size: 14,
+                              color: AppColors.secondaire(context),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              'Départ : $departureDate',
+                              style: AppText.petit(context)
+                                  .copyWith(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.xl),
 
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3EB),
-                          borderRadius:
-                          BorderRadius.circular(14),
-                        ),
-                        child: const Icon(
-                          Icons.directions_bus_rounded,
-                          color: Color(0xFFFF6B00),
-                          size: 28,
-                        ),
-                      ),
+                  // ----------------------------------------------
+                  // PASSAGERS
+                  // ----------------------------------------------
 
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: Text(
-                          agency,
-                          style: const TextStyle(
-                            color: Color(0xFF0A2A66),
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                  TkSectionHeader(
+                    titre: passengers.length > 1
+                        ? 'Passagers et sièges'
+                        : 'Passager et siège',
                   ),
 
-                  const SizedBox(height: 22),
+                  for (var i = 0; i < passengers.length; i++) ...[
+                    if (i > 0) const SizedBox(height: AppSpacing.xs),
+                    _cartePassager(context, passengers[i], i),
+                  ],
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ----------------------------------------------
+                  // MONTANT
+                  // ----------------------------------------------
+
+                  const TkSectionHeader(titre: 'Montant'),
+
+                  TkCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      children: [
+                        _ligneMontant(
+                          context,
+                          'Prix par voyageur',
+                          price,
+                        ),
+
+                        const SizedBox(height: AppSpacing.xs),
+
+                        _ligneMontant(
+                          context,
+                          'Nombre de voyageurs',
+                          '$travelers',
+                        ),
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        Divider(
+                          height: 1,
+                          color: AppColors.inactifTheme(context),
+                        ),
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        Row(
                           children: [
                             Text(
-                              departureTime,
-                              style: const TextStyle(
-                                color: Color(0xFF0A2A66),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              'Total à payer',
+                              style: AppText.corpsFort(context)
+                                  .copyWith(fontSize: 15),
                             ),
-
-                            const SizedBox(height: 4),
-
+                            const Spacer(),
                             Text(
-                              departure,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13,
+                              totalAmount,
+                              style: AppText.titre(context).copyWith(
+                                fontSize: 22,
+                                color: AppColors.orange,
                               ),
                             ),
                           ],
                         ),
-                      ),
-
-                      const Icon(
-                        Icons.arrow_forward,
-                        color: Color(0xFFFF6B00),
-                      ),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              arrivalTime,
-                              style: const TextStyle(
-                                color: Color(0xFF0A2A66),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-                              destination,
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppSpacing.md),
 
+                  // Mention de sécurité : elle rassure juste avant le
+                  // paiement, pas en bas de page après les boutons.
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: Color(0xFFFF6B00),
-                        size: 18,
+                      Icon(
+                        Icons.lock_outline_rounded,
+                        size: 14,
+                        color: AppColors.secondaire(context),
                       ),
-
-                      const SizedBox(width: 8),
-
-                      Expanded(
-                        child: Text(
-                          'Départ : $departureDate',
-                          style: const TextStyle(
-                            color: Color(0xFF0A2A66),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Paiement sécurisé',
+                        style: AppText.petit(context).copyWith(fontSize: 12),
                       ),
                     ],
                   ),
@@ -372,229 +401,213 @@ class BookingSummaryScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 15),
+            // ----------------------------------------------------
+            // ACTIONS
+            // ----------------------------------------------------
 
-            // ==================================================
-            // PASSAGERS
-            // ==================================================
-
-            _buildCard(
+            Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.margeEcran,
+                AppSpacing.sm,
+                AppSpacing.margeEcran,
+                AppSpacing.md,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.fond(context),
+                border: Border(
+                  top: BorderSide(color: AppColors.inactifTheme(context)),
+                ),
+              ),
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Passagers et sièges',
-                    style: TextStyle(
-                      color: Color(0xFF0A2A66),
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
+
+                  TkButton(
+                    libelle: 'Acheter maintenant',
+                    icone: Icons.shopping_bag_outlined,
+                    onPressed: () => _showPurchaseConfirmation(context),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.xs),
 
-                  for (int i = 0;
-                  i < passengers.length;
-                  i++) ...[
-                    _buildPassengerCard(
-                      passenger: passengers[i],
-                      index: i,
+                  TkButton(
+                    libelle: 'Réserver',
+                    variante: TkButtonVariante.tonal,
+                    onPressed: () => _handleReservation(context),
+                  ),
+
+                  // La règle des 72 heures est annoncée ici plutôt que
+                  // découverte au clic sur « Réserver ».
+                  if (!reservationPossible) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'La réservation sans paiement n’est possible que '
+                      'plus de 72 h avant le départ.',
+                      textAlign: TextAlign.center,
+                      style: AppText.petit(context).copyWith(fontSize: 12),
                     ),
-
-                    if (i < passengers.length - 1)
-                      const SizedBox(height: 15),
                   ],
                 ],
               ),
             ),
-
-            const SizedBox(height: 15),
-
-            // ==================================================
-            // PRIX
-            // ==================================================
-
-            _buildCard(
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Prix par voyageur',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-
-                      Text(
-                        price,
-                        style: const TextStyle(
-                          color: Color(0xFF0A2A66),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 15),
-                  const Divider(),
-                  const SizedBox(height: 15),
-
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Nombre de voyageurs',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-
-                      Text(
-                        '$travelers',
-                        style: const TextStyle(
-                          color: Color(0xFF0A2A66),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 15),
-                  const Divider(),
-                  const SizedBox(height: 15),
-
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Total à payer',
-                          style: TextStyle(
-                            color: Color(0xFF0A2A66),
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      Text(
-                        totalAmount,
-                        style: const TextStyle(
-                          color: Color(0xFFFF6B00),
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            // ==================================================
-            // RÉSERVER
-            // ==================================================
-
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _handleReservation(context);
-                },
-                icon: const Icon(
-                  Icons.event_available_outlined,
-                ),
-                label: const Text(
-                  'Réserver',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFF0A2A66),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ==================================================
-            // ACHETER
-            // ==================================================
-
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  _showPurchaseConfirmation(context);
-                },
-                icon: const Icon(
-                  Icons.payment_outlined,
-                ),
-                label: const Text(
-                  'Acheter',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  const Color(0xFFFF6B00),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                    BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            Row(
-              mainAxisAlignment:
-              MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.lock_outline,
-                  size: 15,
-                  color: Colors.grey.shade600,
-                ),
-
-                const SizedBox(width: 5),
-
-                const Text(
-                  'Paiement sécurisé',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  // ============================================================
+  // BLOCS D'AFFICHAGE
+  // ============================================================
+
+  Widget _etape(
+    BuildContext context, {
+    required String heure,
+    required String ville,
+    required IconData icone,
+  }) {
+    return Row(
+      children: [
+        Icon(icone, size: 15, color: AppColors.orange),
+        const SizedBox(width: AppSpacing.sm),
+        SizedBox(
+          width: 62,
+          child: Text(
+            heure,
+            style: AppText.corpsFort(context).copyWith(fontSize: 17),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            ville,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.corps(context).copyWith(fontSize: 15),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _ligneMontant(BuildContext context, String intitule, String valeur) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            intitule,
+            style: AppText.corps(context).copyWith(fontSize: 14),
+          ),
+        ),
+        Text(
+          valeur,
+          style: AppText.corpsFort(context).copyWith(fontSize: 14),
+        ),
+      ],
+    );
+  }
+
+  Widget _cartePassager(
+    BuildContext context,
+    Map<String, dynamic> passenger,
+    int index,
+  ) {
+    final prenom = passenger['prenom']?.toString() ?? '';
+    final nom = passenger['nom']?.toString() ?? '';
+    final telephone = passenger['telephone']?.toString() ?? '';
+    final email = passenger['email']?.toString() ?? '';
+    final siege = passenger['siege']?.toString() ?? '';
+
+    final nomComplet = '$prenom $nom'.trim();
+
+    return TkCard(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.orangeDoux(context),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.orange,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: AppSpacing.xs),
+
+              Expanded(
+                child: Text(
+                  nomComplet.isEmpty ? 'Passager ${index + 1}' : nomComplet,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.corpsFort(context).copyWith(fontSize: 15),
+                ),
+              ),
+
+              if (siege.isNotEmpty)
+                TkChip(
+                  libelle: 'Siège $siege',
+                  ton: TkChipTon.accent,
+                  icone: Icons.event_seat_outlined,
+                ),
+            ],
+          ),
+
+          if (telephone.isNotEmpty || email.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 36),
+              child: Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: 4,
+                children: [
+                  if (telephone.isNotEmpty)
+                    _contactPassager(
+                      context,
+                      Icons.phone_outlined,
+                      telephone,
+                    ),
+                  if (email.isNotEmpty)
+                    _contactPassager(
+                      context,
+                      Icons.mail_outline_rounded,
+                      email,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _contactPassager(
+    BuildContext context,
+    IconData icone,
+    String texte,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icone, size: 13, color: AppColors.secondaire(context)),
+        const SizedBox(width: 4),
+        Text(
+          texte,
+          style: AppText.petit(context).copyWith(fontSize: 12),
+        ),
+      ],
     );
   }
 
@@ -1214,182 +1227,6 @@ class BookingSummaryScreen extends StatelessWidget {
   // PASSAGER
   // ============================================================
 
-  Widget _buildPassengerCard({
-    required Map<String, dynamic> passenger,
-    required int index,
-  }) {
-    final prenom =
-        passenger['prenom']?.toString() ?? '';
-
-    final nom =
-        passenger['nom']?.toString() ?? '';
-
-    final telephone =
-        passenger['telephone']?.toString() ?? '';
-
-    final email =
-        passenger['email']?.toString() ?? '';
-
-    final siege =
-        passenger['siege']?.toString() ?? '';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FB),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-        ),
-      ),
-
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3EB),
-                  borderRadius:
-                  BorderRadius.circular(10),
-                ),
-
-                child: const Icon(
-                  Icons.person,
-                  color: Color(0xFFFF6B00),
-                  size: 21,
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: Text(
-                  'Passager ${index + 1}',
-                  style: const TextStyle(
-                    color: Color(0xFF0A2A66),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-
-              Container(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 5,
-                ),
-
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A2A66),
-                  borderRadius:
-                  BorderRadius.circular(8),
-                ),
-
-                child: Text(
-                  'Siège $siege',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 15),
-
-          _buildDetailRow(
-            Icons.badge_outlined,
-            'Nom complet',
-            '$prenom $nom',
-          ),
-
-          const SizedBox(height: 10),
-
-          _buildDetailRow(
-            Icons.phone_outlined,
-            'Téléphone',
-            telephone,
-          ),
-
-          if (email.trim().isNotEmpty) ...[
-            const SizedBox(height: 10),
-
-            _buildDetailRow(
-              Icons.email_outlined,
-              'E-mail',
-              email,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // LIGNE DÉTAIL
-  // ============================================================
-
-  Widget _buildDetailRow(
-      IconData icon,
-      String title,
-      String value,
-      ) {
-    return Row(
-      crossAxisAlignment:
-      CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: const Color(0xFFFF6B00),
-        ),
-
-        const SizedBox(width: 9),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 11,
-                ),
-              ),
-
-              const SizedBox(height: 2),
-
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFF0A2A66),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // CALCUL TOTAL
-  // ============================================================
-
   String _calculateTotal() {
     final cleanPrice = price
         .replaceAll('FCFA', '')
@@ -1420,36 +1257,5 @@ class BookingSummaryScreen extends StatelessWidget {
     }
 
     return '${buffer.toString()} FCFA';
-  }
-
-  // ============================================================
-  // CARD
-  // ============================================================
-
-  Widget _buildCard({
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-        BorderRadius.circular(20),
-
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.05,
-            ),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-
-      child: child,
-    );
   }
 }

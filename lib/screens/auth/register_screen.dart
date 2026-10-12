@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -73,12 +75,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (!acceptTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Veuillez accepter les conditions d'utilisation.",
-          ),
-        ),
+      TkToast.erreur(
+        context,
+        "Veuillez accepter les conditions d'utilisation.",
       );
 
       return;
@@ -275,21 +274,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   */
 
   void _showMessage(
-      String message, {
-        required bool isError,
-      }) {
+    String message, {
+    required bool isError,
+  }) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-        .hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 
   /*

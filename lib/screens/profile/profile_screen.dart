@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/tk/tk.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
@@ -20,109 +22,108 @@ class ProfileScreen extends StatelessWidget {
   final VoidCallback onHelp;
   final VoidCallback onLogout;
 
-  // ============================================================
-  // COULEURS TOKENDE
-  // ============================================================
-
-  static const Color primaryColor = Color(0xFF0A2A66);
-  static const Color orangeColor = Color(0xFFFF6B00);
-  static const Color backgroundColor = Color(0xFFF8F9FB);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-
-      // ========================================================
-      // EN-TÊTE
-      // ========================================================
-
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-
-        automaticallyImplyLeading: false,
-
-        title: const Text(
-          'Mon profil',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      // ========================================================
-      // CONTENU
-      // ========================================================
+      backgroundColor: AppColors.fond(context),
 
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
-            20,
-            25,
-            20,
-            30,
+            AppSpacing.margeEcran,
+            AppSpacing.md,
+            AppSpacing.margeEcran,
+            // Place réservée à la barre flottante.
+            108,
           ),
           children: [
-            // ====================================================
-            // INFORMATIONS PERSONNELLES
-            // ====================================================
 
-            _buildProfileItem(
-              icon: Icons.person_outline,
-              title: 'Informations personnelles',
-              onTap: onPersonalInformation,
+            Text('Mon profil', style: AppText.titre(context)),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            // Les entrées sont groupées dans une seule carte séparée par des
+            // filets, au lieu de cinq cartes flottantes espacées de 16 px :
+            // elles forment une liste, pas cinq objets indépendants.
+            TkCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _entree(
+                    context,
+                    icone: Icons.person_outline_rounded,
+                    titre: 'Informations personnelles',
+                    onTap: onPersonalInformation,
+                    premiere: true,
+                  ),
+                  _filet(context),
+                  _entree(
+                    context,
+                    icone: Icons.confirmation_number_outlined,
+                    titre: 'Mes voyages',
+                    onTap: onMesVoyages,
+                  ),
+                  _filet(context),
+                  _entree(
+                    context,
+                    icone: Icons.settings_outlined,
+                    titre: 'Paramètres',
+                    onTap: onSettings,
+                  ),
+                  _filet(context),
+                  _entree(
+                    context,
+                    icone: Icons.help_outline_rounded,
+                    titre: 'Aide & assistance',
+                    onTap: onHelp,
+                    derniere: true,
+                  ),
+                ],
+              ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
 
-            // ====================================================
-            // MES VOYAGES
-            // ====================================================
-
-            _buildProfileItem(
-              icon: Icons.confirmation_num_outlined,
-              title: 'Mes voyages',
-              onTap: onMesVoyages,
-            ),
-
-            const SizedBox(height: 16),
-
-            // ====================================================
-            // PARAMÈTRES
-            // ====================================================
-
-            _buildProfileItem(
-              icon: Icons.settings_outlined,
-              title: 'Paramètres',
-              onTap: onSettings,
-            ),
-
-            const SizedBox(height: 16),
-
-            // ====================================================
-            // AIDE & ASSISTANCE
-            // ====================================================
-
-            _buildProfileItem(
-              icon: Icons.help_outline,
-              title: 'Aide & assistance',
-              onTap: onHelp,
-            ),
-
-            const SizedBox(height: 35),
-
-            // ====================================================
-            // DÉCONNEXION
-            // ====================================================
-
-            _buildProfileItem(
-              icon: Icons.logout,
-              title: 'Se déconnecter',
+            // La déconnexion est détachée du groupe et teintée en rouge :
+            // c'est la seule action de cet écran qui sort de l'application.
+            TkCard(
+              padding: EdgeInsets.zero,
               onTap: onLogout,
-              isLogout: true,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.rougeDoux(context),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Icon(
+                        Icons.logout_rounded,
+                        size: 19,
+                        color: AppColors.rouge,
+                      ),
+                    ),
+
+                    const SizedBox(width: AppSpacing.sm),
+
+                    Expanded(
+                      child: Text(
+                        'Se déconnecter',
+                        style: AppText.corpsFort(context).copyWith(
+                          fontSize: 15,
+                          color: AppColors.rouge,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -131,90 +132,73 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // ÉLÉMENT DU PROFIL
+  // ENTRÉE DE LISTE
   // ============================================================
 
-  Widget _buildProfileItem({
-    required IconData icon,
-    required String title,
+  Widget _entree(
+    BuildContext context, {
+    required IconData icone,
+    required String titre,
     required VoidCallback onTap,
-    bool isLogout = false,
+    bool premiere = false,
+    bool derniere = false,
   }) {
+    // Les coins ne s'arrondissent qu'aux extrémités, pour que l'effet
+    // d'appui ne déborde pas de la carte.
+    final rayon = BorderRadius.vertical(
+      top: Radius.circular(premiere ? AppRadius.lg : 0),
+      bottom: Radius.circular(derniere ? AppRadius.lg : 0),
+    );
+
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-
-        child: Container(
-          width: double.infinity,
-          height: 82,
+        borderRadius: rayon,
+        child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: 24,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
           ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-
           child: Row(
             children: [
-              // ==================================================
-              // ICÔNE
-              // ==================================================
-
               Container(
-                width: 58,
-                height: 58,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: isLogout
-                      ? const Color(0xFFFFEEEE)
-                      : const Color(0xFFFFF3EA),
-                  borderRadius: BorderRadius.circular(17),
+                  color: AppColors.orangeDoux(context),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-
-                child: Icon(
-                  icon,
-                  color: isLogout
-                      ? Colors.red
-                      : orangeColor,
-                  size: 30,
-                ),
+                child: Icon(icone, size: 19, color: AppColors.orange),
               ),
 
-              const SizedBox(width: 20),
-
-              // ==================================================
-              // TITRE
-              // ==================================================
+              const SizedBox(width: AppSpacing.sm),
 
               Expanded(
                 child: Text(
-                  title,
-                  style: TextStyle(
-                    color: isLogout
-                        ? Colors.red
-                        : primaryColor,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  titre,
+                  style: AppText.corpsFort(context).copyWith(fontSize: 15),
                 ),
               ),
 
-              // ==================================================
-              // FLÈCHE
-              // ==================================================
-
               Icon(
-                Icons.chevron_right,
-                color: isLogout
-                    ? Colors.red.shade300
-                    : Colors.grey.shade500,
-                size: 32,
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.secondaire(context),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _filet(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 68),
+      child: Divider(
+        height: 1,
+        color: AppColors.inactifTheme(context),
       ),
     );
   }

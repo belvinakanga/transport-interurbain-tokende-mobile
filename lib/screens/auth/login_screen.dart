@@ -1,10 +1,13 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+
+import '../../widgets/tk/tk.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../home/home_screen.dart';
+import 'forgot_password.dart';
 import 'register_screen.dart';
 import '../../config/app_config.dart';
 
@@ -225,23 +228,12 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
 
   void _showMessage(
-      String message, {
-        required bool isError,
-      }) {
+    String message, {
+    required bool isError,
+  }) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context)
-        .hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-        backgroundColor:
-        isError ? Colors.red.shade700 : primaryColor,
-      ),
-    );
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 
   // ============================================================
@@ -249,9 +241,11 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
 
   void _forgotPassword() {
-    _showMessage(
-      'La récupération du mot de passe sera ajoutée prochainement.',
-      isError: false,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ForgotPasswordScreen(),
+      ),
     );
   }
 

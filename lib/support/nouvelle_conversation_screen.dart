@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/tk/tk.dart';
+
 import '../../services/support_service.dart';
 
 class NouvelleConversationScreen extends StatefulWidget {
@@ -101,28 +103,12 @@ class _NouvelleConversationScreenState
   }
 
   void _showMessage(
-      String message, {
-        bool isError = false,
-      }) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          backgroundColor:
-          isError ? Colors.red.shade700 : primaryColor,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) return;
+
+    TkToast.selonErreur(context, message, erreur: isError);
   }
 
   @override
