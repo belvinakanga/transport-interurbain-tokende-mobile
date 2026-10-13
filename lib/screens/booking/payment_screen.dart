@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../../config/app_config.dart';
+import '../../services/tarif_service.dart';
 import '../home/home_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -241,23 +242,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          Row(
-            children: [
-              Text(
-                'Montant à payer',
-                style: AppText.corpsFort(context).copyWith(fontSize: 15),
-              ),
-              const Spacer(),
-              Text(
-                // _calculateTotal() suffixe déjà « FCFA ».
-                _calculateTotal(),
-                style: AppText.titre(context).copyWith(
-                  fontSize: 22,
-                  color: AppColors.orange,
-                ),
-              ),
-            ],
-          ),
+            // Le détail remplace le total sec : le voyageur doit voir les
+            // frais de service avant de valider.
+            FutureBuilder<double>(
+              future: TarifService.charger(),
+              initialData: TarifService.fraisParBillet,
+              builder: (context, instantane) {
+                return TkMontantDetail(
+                  prixUnitaire: _prixUnitaire(),
+                  fraisParBillet:
+                      instantane.data ?? TarifService.fraisParDefaut,
+                  nombreBillets: widget.travelers,
+                );
+              },
+            ),
         ],
       ),
     );
@@ -590,7 +588,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
           content: Text(
             'Vous êtes sur le point de payer '
-                '${_calculateTotal()} '
+                '$_totalAvecFrais '
+                  '(frais de service compris)'
                 'pour votre '
                 '${widget.isPurchase ? 'billet' : 'réservation'}.\n\n'
                 'Voulez-vous continuer ?',
@@ -1564,46 +1563,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // CALCUL TOTAL
   // ============================================================
 
-  String _calculateTotal() {
-    final cleanPrice =
-    widget.price
+  /// Prix de l'agence, extrait de la chaîne reçue (« 15 000 FCFA »).
+  double _prixUnitaire() {
+    final nettoye = widget.price
         .replaceAll('FCFA', '')
+        .replaceAll('\u202F', '')
         .replaceAll(' ', '')
         .replaceAll(',', '');
 
-    final priceValue =
-        int.tryParse(
-          cleanPrice,
-        ) ??
-            0;
-
-    final total =
-        priceValue *
-            widget.travelers;
-
-    final formatted =
-    total.toString();
-
-    final buffer =
-    StringBuffer();
-
-    for (
-    int i = 0;
-    i < formatted.length;
-    i++
-    ) {
-      if (i > 0 &&
-          (formatted.length - i) %
-              3 ==
-              0) {
-        buffer.write(' ');
-      }
-
-      buffer.write(
-        formatted[i],
-      );
-    }
-
-    return '${buffer.toString()} FCFA';
+    return double.tryParse(nettoye) ?? 0;
   }
+
+  /// Total réellement débité, frais de service compris.
+  String get _totalAvecFrais {
+    final frais = TarifService.fraisParBillet * widget.travelers;
+
+    return TkMontantDetail.formater(
+      _prixUnitaire() * widget.travelers + frais,
+    );
+  }
+
 }

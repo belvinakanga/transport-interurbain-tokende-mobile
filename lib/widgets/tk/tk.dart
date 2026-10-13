@@ -16,5 +16,6 @@ export 'tk_card.dart';
 export 'tk_chip.dart';
 export 'tk_empty_state.dart';
 export 'tk_field.dart';
+export 'tk_montant_detail.dart';
 export 'tk_section.dart';
 export 'tk_toast.dart';

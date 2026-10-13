@@ -113,6 +113,28 @@ TkToast.attente(context, 'Paiement en cours de validation');
 TkToast.erreur(context,  'Paiement refusé');
 ```
 
+## Les frais de service
+
+Le voyageur paie le prix de l'agence **plus 100 FCFA de frais de service
+par billet**. Le récapitulatif et l'écran de paiement en montrent le
+détail, au lieu d'un total sec :
+
+```
+Billets           2 × 15 000 FCFA      30 000 FCFA
+Frais de service  2 × 100 FCFA            200 FCFA
+──────────────────────────────────────────────────
+Total à payer                          30 200 FCFA
+```
+
+Le tarif est lu sur l'API (`TarifService`, repli à 100 hors ligne), jamais
+écrit en dur : il ne peut plus diverger du montant facturé.
+
+> Avant, l'application affichait 30 000 et le serveur débitait 30 200.
+
+Le partage de ces frais entre Tokende et l'agence est interne et n'apparaît
+nulle part côté client. Détail complet dans `docs/frais-de-service.md` du
+dépôt backend.
+
 ## 7. Billet
 
 Voir [billets.md](billets.md).

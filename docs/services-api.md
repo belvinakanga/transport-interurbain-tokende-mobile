@@ -35,6 +35,19 @@ VillesService.viderCache();
 Cache en mémoire, **repli sur une liste locale** si l'API est injoignable :
 le formulaire de recherche reste utilisable hors ligne.
 
+### `TarifService`
+
+Frais de service par billet, lus sur `GET /api/tarification`.
+
+```dart
+await TarifService.charger();        // 100.0
+TarifService.fraisParBillet;         // dernière valeur connue, sans réseau
+```
+
+Cache en mémoire, repli à 100 si l'API est injoignable. Lire le tarif
+plutôt que l'écrire en dur évite que l'écran annonce un total différent de
+celui qui sera débité.
+
 ### `PasswordResetService`
 
 Les trois appels du mot de passe oublié. Délai de 20 secondes.

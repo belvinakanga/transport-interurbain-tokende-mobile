@@ -213,6 +213,34 @@ peut être démonté avant l'arrivée de la réponse réseau.
 
 ---
 
+## TkMontantDetail
+
+Détail d'un montant à payer : billets, frais de service, total.
+
+```dart
+TkMontantDetail(
+  prixUnitaire: 15000,
+  fraisParBillet: 100,
+  nombreBillets: 2,
+)
+```
+
+Rend :
+
+```
+Billets           2 × 15 000 FCFA      30 000 FCFA
+Frais de service  2 × 100 FCFA            200 FCFA
+──────────────────────────────────────────────────
+Total à payer                          30 200 FCFA
+```
+
+`TkMontantDetail.formater(30200)` donne `30 200 FCFA` (espace fine
+insécable entre les milliers).
+
+Le tarif se récupère avec `TarifService.charger()`, pas en dur.
+
+---
+
 ## TkBilletSheet
 
 Billet de voyage, en feuille glissante. Voir [billets.md](billets.md).

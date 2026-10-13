@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/tarif_service.dart';
 import '../../widgets/tk/tk.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -167,9 +168,27 @@ class BookingSummaryScreen extends StatelessWidget {
   // TOTAL
   // ============================================================
 
-  String get totalAmount {
-    return _calculateTotal();
+  /// Prix de l'agence, extrait de la chaîne reçue (« 15 000 FCFA »).
+  double _prixUnitaire() {
+    final nettoye = price
+        .replaceAll('FCFA', '')
+        .replaceAll('\u202F', '')
+        .replaceAll(' ', '')
+        .replaceAll(',', '');
+
+    return double.tryParse(nettoye) ?? 0;
   }
+
+  /// Total réellement débité, frais de service compris.
+  ///
+  /// Les messages de confirmation annonçaient auparavant le seul prix de
+  /// l'agence, soit moins que la somme réellement prélevée.
+  String get totalAvecFrais {
+    final frais = TarifService.fraisParBillet * travelers;
+
+    return TkMontantDetail.formater(_prixUnitaire() * travelers + frais);
+  }
+
 
   // ============================================================
   // BUILD
@@ -332,49 +351,19 @@ class BookingSummaryScreen extends StatelessWidget {
 
                   TkCard(
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Column(
-                      children: [
-                        _ligneMontant(
-                          context,
-                          'Prix par voyageur',
-                          price,
-                        ),
-
-                        const SizedBox(height: AppSpacing.xs),
-
-                        _ligneMontant(
-                          context,
-                          'Nombre de voyageurs',
-                          '$travelers',
-                        ),
-
-                        const SizedBox(height: AppSpacing.sm),
-
-                        Divider(
-                          height: 1,
-                          color: AppColors.inactifTheme(context),
-                        ),
-
-                        const SizedBox(height: AppSpacing.sm),
-
-                        Row(
-                          children: [
-                            Text(
-                              'Total à payer',
-                              style: AppText.corpsFort(context)
-                                  .copyWith(fontSize: 15),
-                            ),
-                            const Spacer(),
-                            Text(
-                              totalAmount,
-                              style: AppText.titre(context).copyWith(
-                                fontSize: 22,
-                                color: AppColors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    // Le tarif vient du serveur ; le repli local évite une
+                    // ligne de frais vide le temps de la réponse.
+                    child: FutureBuilder<double>(
+                      future: TarifService.charger(),
+                      initialData: TarifService.fraisParBillet,
+                      builder: (context, instantane) {
+                        return TkMontantDetail(
+                          prixUnitaire: _prixUnitaire(),
+                          fraisParBillet:
+                              instantane.data ?? TarifService.fraisParDefaut,
+                          nombreBillets: travelers,
+                        );
+                      },
                     ),
                   ),
 
@@ -488,22 +477,6 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _ligneMontant(BuildContext context, String intitule, String valeur) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            intitule,
-            style: AppText.corps(context).copyWith(fontSize: 14),
-          ),
-        ),
-        Text(
-          valeur,
-          style: AppText.corpsFort(context).copyWith(fontSize: 14),
-        ),
-      ],
-    );
-  }
 
   Widget _cartePassager(
     BuildContext context,
@@ -725,7 +698,8 @@ class BookingSummaryScreen extends StatelessWidget {
             'Vous êtes sur le point de réserver '
                 '$travelers '
                 '${travelers > 1 ? 'places' : 'place'} '
-                'pour un montant de $totalAmount.\n\n'
+                'pour un montant de $totalAvecFrais '
+                  '(frais de service compris).\n\n'
                 'Voulez-vous confirmer votre réservation ?',
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -1016,7 +990,8 @@ class BookingSummaryScreen extends StatelessWidget {
 
           content: Text(
             'Vous êtes sur le point de payer '
-                '$totalAmount pour votre billet.\n\n'
+                '$totalAvecFrais pour votre billet, '
+                  'frais de service compris.\n\n'
                 'Voulez-vous continuer ?',
             textAlign: TextAlign.center,
             style: const TextStyle(
@@ -1227,35 +1202,4 @@ class BookingSummaryScreen extends StatelessWidget {
   // PASSAGER
   // ============================================================
 
-  String _calculateTotal() {
-    final cleanPrice = price
-        .replaceAll('FCFA', '')
-        .replaceAll(' ', '')
-        .replaceAll(',', '');
-
-    final priceValue =
-        int.tryParse(cleanPrice) ?? 0;
-
-    final total =
-        priceValue * travelers;
-
-    final formatted =
-    total.toString();
-
-    final buffer =
-    StringBuffer();
-
-    for (int i = 0;
-    i < formatted.length;
-    i++) {
-      if (i > 0 &&
-          (formatted.length - i) % 3 == 0) {
-        buffer.write(' ');
-      }
-
-      buffer.write(formatted[i]);
-    }
-
-    return '${buffer.toString()} FCFA';
-  }
 }
