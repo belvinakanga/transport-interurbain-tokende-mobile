@@ -9,6 +9,8 @@ import '../auth/login_screen.dart';
 import '../voyages/mes_voyages_screen.dart';
 import 'widgets/home_search_card.dart';
 import 'widgets/trajets_programmes.dart';
+import '../../services/notification_service.dart';
+import '../notifications/notifications_screen.dart';
 import 'widgets/tk_next_trip_card.dart';
 import '../../services/prochain_voyage_service.dart';
 import '../../config/app_config.dart';
@@ -117,6 +119,10 @@ class _HomeScreenState extends State<HomeScreen> {
         widget.initialIndex.clamp(0, 3);
 
     _loadUserInformation();
+
+    // L'appareil ne peut être déclaré qu'une fois l'utilisateur connecté :
+    // la requête part avec son jeton d'authentification.
+    NotificationService.enregistrerAupresDuServeur();
   }
 
   // ============================================================
@@ -345,15 +351,66 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        TkIconButton(
-          icone: Icons.notifications_none_rounded,
-          infobulle: 'Notifications',
-          onPressed: () {
-            _showComingSoon(
-              'Les notifications seront disponibles prochainement.',
-            );
-          },
-        ),
+          // La pastille suit le compteur en direct : une notification
+          // reçue pendant que l'application est ouverte la fait apparaître
+          // sans recharger l'écran.
+          ValueListenableBuilder<int>(
+            valueListenable: NotificationService.compteurNonLues,
+            builder: (context, nonLues, _) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  TkIconButton(
+                    icone: nonLues > 0
+                        ? Icons.notifications_rounded
+                        : Icons.notifications_none_rounded,
+                    infobulle: 'Notifications',
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificationsScreen(),
+                        ),
+                      );
+                      await NotificationService.rafraichirCompteur();
+                    },
+                  ),
+
+                  if (nonLues > 0)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 18),
+                        decoration: BoxDecoration(
+                          color: AppColors.rouge,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.pleinRond),
+                          border: Border.all(
+                            color: AppColors.fond(context),
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          nonLues > 9 ? '9+' : '$nonLues',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            height: 1.4,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
       ],
     );
   }
@@ -807,6 +864,10 @@ class _HomeScreenState extends State<HomeScreen> {
         key: 'user_role',
       );
 
+      // Oublier l'appareil : sans cela, l'utilisateur suivant sur ce
+      // téléphone recevrait les notifications du précédent.
+      await NotificationService.oublier();
+
       if (!mounted) return;
 
       Navigator.pushAndRemoveUntil(
@@ -827,16 +888,6 @@ class _HomeScreenState extends State<HomeScreen> {
         'Impossible de terminer la déconnexion.',
       );
     }
-  }
-
-  // ============================================================
-  // MESSAGE TEMPORAIRE
-  // ============================================================
-
-  void _showComingSoon(
-      String message,
-      ) {
-    TkToast.attente(context, message);
   }
 
   // ============================================================

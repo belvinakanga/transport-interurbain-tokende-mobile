@@ -66,12 +66,30 @@ d'extraction regroupée là plutôt que dupliquée dans les écrans.
 
 Conversations avec l'administration.
 
-> **Pointe encore sur `http://192.168.1.84:8000/api`**, une adresse morte,
-> au lieu d'utiliser `AppConfig`.
+Utilise `AppConfig.baseUrl`. Elle pointait auparavant sur
+`http://192.168.1.84:8000/api`, une adresse de réseau local devenue morte :
+le support ne répondait plus alors que tout le reste fonctionnait.
 
 ### `NotificationService`
 
-Initialise Firebase Messaging au démarrage.
+Firebase : autorisation, jeton push, réception des alertes. Déclare
+l'appareil au serveur après la connexion, l'oublie à la déconnexion.
+
+`NotificationService.compteurNonLues` est un `ValueNotifier` : la pastille
+de la cloche le suit et bouge sans recharger l'écran.
+
+### `NotificationsService`
+
+Lit les notifications **du serveur**, pas de Firebase. Une alerte push peut
+ne jamais arriver ; la notification, elle, reste consultable.
+
+```dart
+await NotificationsService.charger();        // la liste
+await NotificationsService.compterNonLues(); // la pastille
+await NotificationsService.marquerLue(id);
+```
+
+Détail complet dans `docs/notifications.md` du dépôt backend.
 
 ### `ApiService`
 

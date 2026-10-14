@@ -3,10 +3,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../config/app_config.dart';
+
 class SupportService {
-  // ⚠️ Remplace cette URL uniquement si ton URL API actuelle est différente.
-  static const String baseUrl =
-      'http://192.168.1.84:8000/api';
+  /// Adresse de l'API, partagée avec le reste de l'application.
+  ///
+  /// Elle était auparavant codée en dur sur une adresse de réseau local
+  /// devenue morte : le support ne répondait plus, alors que tout le reste
+  /// fonctionnait.
+  static String get baseUrl => AppConfig.baseUrl;
 
   Future<String?> _getToken() async {
     const storage = FlutterSecureStorage();

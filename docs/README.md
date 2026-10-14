@@ -24,6 +24,7 @@ Elle consomme l'API du dépôt `transport-interurbain-backend`.
 | Catalogue des écrans | [ecrans.md](ecrans.md) |
 | Réserver un voyage | [parcours-reservation.md](parcours-reservation.md) |
 | Billet, QR code, impression | [billets.md](billets.md) |
+| Notifications | voir `docs/notifications.md` du dépôt backend |
 | Appels réseau | [services-api.md](services-api.md) |
 
 ## Transversal
