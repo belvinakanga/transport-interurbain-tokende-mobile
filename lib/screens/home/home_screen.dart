@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../auth/login_screen.dart';
 import '../voyages/mes_voyages_screen.dart';
 import 'widgets/home_search_card.dart';
+import 'widgets/trajets_programmes.dart';
 import 'widgets/tk_next_trip_card.dart';
 import '../../services/prochain_voyage_service.dart';
 import '../../config/app_config.dart';
@@ -583,6 +584,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const HomeSearchCard(),
+
+                // Les départs déjà publiés, listés sous le formulaire :
+                // un voyageur qui ne sait pas quoi chercher voit d'abord
+                // ce qui existe.
+                const TrajetsProgrammes(),
             ],
           ),
         ),

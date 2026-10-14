@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../avis/avis_screen.dart';
 import '../../config/app_config.dart';
+import '../../services/tarif_service.dart';
 import '../../utils/format_trajet.dart';
 import '../../widgets/tk/tk.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -56,6 +57,9 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
   @override
   void initState() {
     super.initState();
+
+    // Tarif des frais de service : la liste en affiche le détail.
+    TarifService.charger();
 
     _tabController = TabController(
       length: 2,
@@ -1025,6 +1029,7 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
             trajet: trip,
             sieges: sieges,
             montant: montant,
+              detailFrais: _detailFrais(reservation, trip),
             voyageurs: voyageurs,
           ),
 
@@ -1135,6 +1140,7 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
             trajet: trip,
             sieges: sieges,
             montant: prix,
+              detailFrais: _detailFraisAchat(achat),
             voyageurs: voyageurs,
           ),
 
@@ -1228,6 +1234,10 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
     required List<int> sieges,
     required String montant,
     required List<String> voyageurs,
+
+    /// Ventilation du montant, affichée sous le total : le voyageur
+    /// doit pouvoir retrouver d'où vient ce qu'il a payé.
+    String? detailFrais,
   }) {
     // Dates et heures viennent du backend, qui normalise les formats
     // hétérogènes de la base ; on n'affiche que ce qui existe réellement.
@@ -1300,6 +1310,20 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
             ),
           ],
         ),
+
+          if (detailFrais != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
+              child: Row(
+                children: [
+                  const Spacer(),
+                  Text(
+                    detailFrais,
+                    style: AppText.petit(context).copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
       ],
     );
   }
@@ -1922,8 +1946,10 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
         ) ??
             1;
 
+      // Frais de service compris : le serveur les ajoute au
+      // paiement ; les omettre afficherait moins que le dû.
     return _formatMoney(
-      prix * places,
+      prix * places + TarifService.fraisParBillet * places,
     );
   }
 
@@ -1945,6 +1971,41 @@ class _MesVoyagesScreenState extends State<MesVoyagesScreen>
 // ============================================================
 // FORMAT MONNAIE
 // ============================================================
+
+  // ============================================================
+  // DÉTAIL DES FRAIS
+  //
+  // Le voyageur paie le prix de l'agence plus des frais de service.
+  // La ligne ci-dessous le lui rappelle sous le total, pour qu'il
+  // retrouve d'où vient la somme.
+  // ============================================================
+
+  String? _detailFrais(
+      Map<String, dynamic> reservation,
+      Map<String, dynamic>? trajet,
+      ) {
+    final places = int.tryParse(
+          reservation['nombre_places']?.toString() ?? '1',
+        ) ??
+        1;
+
+    final prix = double.tryParse(trajet?['prix']?.toString() ?? '0') ?? 0;
+    if (prix <= 0) return null;
+
+    final frais = TarifService.fraisParBillet * places;
+
+    return '${_formatMoney(prix * places)} + ${_formatMoney(frais)} de frais';
+  }
+
+  String? _detailFraisAchat(Map<String, dynamic> achat) {
+    final base = double.tryParse(achat['montant_base']?.toString() ?? '');
+    final frais = double.tryParse(achat['frais_tokende']?.toString() ?? '');
+
+    if (base == null || frais == null || frais <= 0) return null;
+
+    return '${_formatMoney(base)} + ${_formatMoney(frais)} de frais';
+  }
+
 
   String _formatMoney(
       dynamic value,
