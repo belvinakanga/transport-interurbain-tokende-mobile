@@ -105,6 +105,15 @@ Le changement de mot de passe depuis les paramètres ne fait rien. À noter :
 la **récupération** de mot de passe, elle, fonctionne de bout en bout — voir
 [mot-de-passe-oublie.md](mot-de-passe-oublie.md).
 
+Dans le même écran, les deux interrupteurs de notification —
+« Notifications » et « Réservations » — n'écrivent que dans
+`SharedPreferences`. Le serveur ne les lit pas : les couper n'empêche
+aujourd'hui aucune notification de partir. Il faudrait soit les remonter au
+serveur, soit les filtrer à l'affichage.
+
+L'interrupteur « Promotions » a été retiré le 14 octobre 2026 : il n'avait
+rien derrière lui et la fonctionnalité est abandonnée.
+
 ---
 
 ## 6. Avertissements d'analyse restants
@@ -164,6 +173,7 @@ Voir [composants-tk.md](composants-tk.md).
 3. Faire passer tous les écrans par `AppConfig` — corrige l'émulateur
    Android et l'adresse morte du support.
 4. Brancher le mode sombre — la palette est déjà écrite.
-5. Terminer `_changePassword`.
+5. Terminer `_changePassword`, et décider du sort des deux interrupteurs de
+   notification.
 6. Retirer l'ancienne génération de composants une fois les derniers usages
    migrés.

@@ -43,8 +43,20 @@ class NotificationTokende {
   }
 
   /// Identifiant de la conversation à ouvrir, s'il y en a une.
-  int? get conversationId {
-    final valeur = donnees['conversation_id'];
+  int? get conversationId => _entier('conversation_id');
+
+  /// Réservation concernée, pour les rappels de voyage et de paiement.
+  int? get reservationId => _entier('reservation_id');
+
+  /// Achat concerné, pour les billets d'un achat direct.
+  int? get achatId => _entier('achat_id');
+
+  /// Écran que le serveur demande d'ouvrir : « voyages », « billets »,
+  /// « conversation »… Vide quand la notification n'est qu'une information.
+  String get ecran => (donnees['ecran'] ?? '').toString();
+
+  int? _entier(String cle) {
+    final valeur = donnees[cle];
     if (valeur is int) return valeur;
     return int.tryParse(valeur?.toString() ?? '');
   }

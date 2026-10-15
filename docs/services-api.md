@@ -78,6 +78,21 @@ l'appareil au serveur après la connexion, l'oublie à la déconnexion.
 `NotificationService.compteurNonLues` est un `ValueNotifier` : la pastille
 de la cloche le suit et bouge sans recharger l'écran.
 
+Le projet Firebase est `tokende-e535e` ; `lib/firebase_options.dart` et
+`android/app/google-services.json` sont en place. Côté serveur, l'envoi
+passe par l'API FCM HTTP v1 (voir `notifications.md` du dépôt backend).
+
+Deux limites connues :
+
+- **Le web n'obtiendra pas de jeton.** `getToken()` est appelé sans clé
+  VAPID et l'application n'a pas de service worker de messagerie : sur le
+  web, la déclaration d'appareil échoue en silence — `enregistrerAupresDuServeur`
+  avale l'erreur, l'application reste utilisable.
+- **Aucun canal de notification Android n'est déclaré.** Android retombe
+  donc sur le canal créé par Firebase. Pour grouper les alertes Tokende,
+  il faudrait créer le canal ici *et* le nommer dans le message côté
+  serveur ; nommer un canal inexistant ferait ignorer l'alerte en silence.
+
 ### `NotificationsService`
 
 Lit les notifications **du serveur**, pas de Firebase. Une alerte push peut
@@ -87,6 +102,16 @@ ne jamais arriver ; la notification, elle, reste consultable.
 await NotificationsService.charger();        // la liste
 await NotificationsService.compterNonLues(); // la pastille
 await NotificationsService.marquerLue(id);
+```
+
+Chaque notification porte sa destination, lue par des accesseurs plutôt que
+par les appelants :
+
+```dart
+notification.ecran;          // « voyages », « billets », « conversation »
+notification.reservationId;  // pour les rappels de voyage
+notification.achatId;        // pour un achat direct
+notification.conversationId; // pour un message de l'assistance
 ```
 
 Détail complet dans `docs/notifications.md` du dépôt backend.

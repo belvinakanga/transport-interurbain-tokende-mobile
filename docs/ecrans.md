@@ -78,6 +78,14 @@ que `payée`.
 `settings_screen.dart` contient sept classes. Son `_changePassword` est
 **encore un bouchon** : « sera connectée à Laravel prochainement ».
 
+Il propose deux interrupteurs de notification, « Notifications » et
+« Réservations ». L'interrupteur « Promotions » a été retiré : la
+fonctionnalité n'existe pas et rien derrière ne l'alimentait.
+
+> Ces deux interrupteurs n'écrivent que dans `SharedPreferences`. Le serveur
+> ne les lit pas : couper « Réservations » n'empêche aujourd'hui aucune
+> notification de partir.
+
 ## Avis
 
 `avis/avis_screen.dart` — noter un voyage effectué, consulter les avis.

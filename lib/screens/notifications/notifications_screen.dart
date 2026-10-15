@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/notification_service.dart';
 import '../../services/notifications_service.dart';
 import '../../support/conversation_screen.dart';
+import '../voyages/mes_voyages_screen.dart';
 import '../../widgets/tk/tk.dart';
 
 /// Liste des notifications reçues.
@@ -71,6 +72,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     if (!mounted) return;
 
+    // Le serveur indique l'écran à ouvrir. Une notification sans
+    // destination reste une simple information : l'appui la marque lue,
+    // et rien de plus.
     final conversation = notification.conversationId;
 
     if (conversation != null) {
@@ -82,6 +86,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // Le titre réel est rechargé par l'écran lui-même ; cette
             // valeur n'est qu'un repère le temps de l'ouverture.
             subject: notification.titre,
+          ),
+        ),
+      );
+    } else if (notification.ecran == 'voyages' ||
+        notification.ecran == 'billets') {
+      // Les billets d'un achat direct sont dans l'onglet « Achats » ;
+      // tout le reste dans « Réservations ».
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MesVoyagesScreen(
+            initialTabIndex: notification.achatId != null ? 1 : 0,
           ),
         ),
       );
@@ -198,13 +214,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.orangeDoux(context),
+              color: _fondIcone(notification.type, context),
               borderRadius: BorderRadius.circular(AppRadius.sm),
+              // Les fonds atténués sont transparents : sans ce trait, la
+              // pastille se dissoudrait dans le crème d'une carte non lue,
+              // qui est de la même famille.
+              border: Border.all(
+                color: _couleurIcone(notification.type)
+                    .withValues(alpha: 0.30),
+              ),
             ),
             child: Icon(
               _icone(notification.type),
               size: 18,
-              color: AppColors.orange,
+              color: _couleurIcone(notification.type),
             ),
           ),
 
@@ -262,13 +285,76 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     switch (type) {
       case 'message':
         return Icons.chat_bubble_outline_rounded;
-      case 'reservation':
+
+      case 'voyage_rappel':
+        return Icons.event_available_outlined;
+
+      case 'voyage_imminent':
+        return Icons.directions_bus_outlined;
+
+      case 'billet_emis':
         return Icons.confirmation_number_outlined;
+
+      case 'reservation_enregistree':
+      case 'reservation':
+        return Icons.bookmark_border_rounded;
+
+      case 'reservation_attente':
+        return Icons.schedule_rounded;
+
+      case 'reservation_derniere_chance':
+        return Icons.warning_amber_rounded;
+
+      case 'reservation_expiree':
+        return Icons.event_busy_outlined;
+
+      case 'trajet_modifie':
+        return Icons.update_rounded;
+
+      case 'trajet_supprime':
+        return Icons.block_rounded;
+
+      case 'vente_agence':
+        return Icons.trending_up_rounded;
+
       case 'paiement':
         return Icons.payments_outlined;
+
       default:
         return Icons.notifications_none_rounded;
     }
+  }
+
+  /// La couleur dit l'urgence avant que le texte soit lu : vert pour ce qui
+  /// est acquis, ambre pour ce qui attend, rouge pour ce qui est perdu.
+  Color _couleurIcone(String type) {
+    switch (type) {
+      case 'billet_emis':
+      case 'vente_agence':
+        return AppColors.vert;
+
+      case 'reservation_attente':
+      case 'reservation_derniere_chance':
+      case 'trajet_modifie':
+        return AppColors.ambre;
+
+      case 'reservation_expiree':
+      case 'trajet_supprime':
+        return AppColors.rouge;
+
+      default:
+        return AppColors.orange;
+    }
+  }
+
+  Color _fondIcone(String type, BuildContext context) {
+    final couleur = _couleurIcone(type);
+
+    if (couleur == AppColors.vert) return AppColors.vertDoux(context);
+    if (couleur == AppColors.ambre) return AppColors.ambreDoux(context);
+    if (couleur == AppColors.rouge) return AppColors.rougeDoux(context);
+
+    return AppColors.orangeDoux(context);
   }
 
   /// « il y a 5 min », « hier »… Une date absolue serait moins parlante

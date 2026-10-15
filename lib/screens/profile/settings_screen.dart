@@ -37,7 +37,6 @@ class _SettingsScreenState
 
   bool notificationsEnabled = true;
   bool reservationsEnabled = true;
-  bool promotionsEnabled = false;
 
   @override
   void initState() {
@@ -68,12 +67,6 @@ class _SettingsScreenState
             'reservations_enabled',
           ) ??
               true;
-
-      promotionsEnabled =
-          prefs.getBool(
-            'promotions_enabled',
-          ) ??
-              false;
     });
   }
 
@@ -137,29 +130,6 @@ class _SettingsScreenState
       value
           ? 'Les notifications de réservation sont activées.'
           : 'Les notifications de réservation sont désactivées.',
-    );
-  }
-
-  // ============================================================
-  // PROMOTIONS
-  // ============================================================
-
-  Future<void> _changePromotions(
-      bool value,
-      ) async {
-    setState(() {
-      promotionsEnabled = value;
-    });
-
-    await _saveBoolean(
-      'promotions_enabled',
-      value,
-    );
-
-    _showMessage(
-      value
-          ? 'Les promotions sont activées.'
-          : 'Les promotions sont désactivées.',
     );
   }
 
@@ -265,15 +235,6 @@ class _SettingsScreenState
                               'réservations',
                           valeur: reservationsEnabled,
                           onChanged: _changeReservations,
-                        ),
-                        _filet(),
-                        _interrupteur(
-                          icone: Icons.local_offer_outlined,
-                          titre: 'Promotions',
-                          sousTitre:
-                              'Recevoir les offres et promotions de Tokende',
-                          valeur: promotionsEnabled,
-                          onChanged: _changePromotions,
                         ),
                       ],
                     ),
